@@ -57,7 +57,7 @@ class TestLiveUartCoherence(unittest.TestCase):
         self.assertEqual(nodes["0001"]["role"], "Master")
         self.assertEqual(nodes["0002"]["role"], "Slave")
         self.assertEqual(st["master_rotation"]["current_master_id"], "0001")
-        self.assertEqual(st["master_rotation"]["next_master_id"], "0002")
+        self.assertIsNone(st["master_rotation"]["next_master_id"])
 
     def test_02_master_sync_twr_parsing(self):
         """
@@ -126,7 +126,7 @@ class TestLiveUartCoherence(unittest.TestCase):
         st = self.engine.get_status()
         self.assertIn("master_rotation", st)
         self.assertEqual(st["master_rotation"]["current_master_id"], "0001")
-        self.assertEqual(st["master_rotation"]["next_master_id"], "0002")
+        self.assertIsNone(st["master_rotation"]["next_master_id"])
 
         # Simulação: alternar modo
         res = self.engine.set_simulation_mode(True, scenario="failover")
@@ -176,4 +176,3 @@ class TestLiveUartCoherence(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
-

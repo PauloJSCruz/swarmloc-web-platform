@@ -1778,7 +1778,7 @@ class LiveTelemetryEngine:
         self.master_rotation = {
             "current_master_id": "0001",
             "prev_master_id": None,
-            "next_master_id": "0002",
+            "next_master_id": None,
             "master_confirmed": True,
             "last_change_epoch": int(time.time() * 1000),
             "last_change_reason": "Inicialização do Protocolo Hardware",
@@ -2818,10 +2818,7 @@ class LiveTelemetryEngine:
                 curr_id = m_cede.group(2).upper().zfill(4)
                 self.master_rotation["prev_master_id"] = prev_id
                 self.master_rotation["current_master_id"] = curr_id
-                order = ["0001", "0002", "0003", "0004", "0005", "0006"]
-                if curr_id in order:
-                    next_idx = (order.index(curr_id) + 1) % len(order)
-                    self.master_rotation["next_master_id"] = order[next_idx]
+                self.master_rotation["next_master_id"] = None
                 self.master_rotation["master_confirmed"] = True
                 self.master_rotation["last_change_epoch"] = int(time.time() * 1000)
                 self.master_rotation["last_change_reason"] = "Transição Dinâmica de Liderança (Hardware)"
@@ -2844,10 +2841,7 @@ class LiveTelemetryEngine:
                 if prev_id != curr_id:
                     self.master_rotation["prev_master_id"] = prev_id
                 self.master_rotation["current_master_id"] = curr_id
-                order = ["0001", "0002", "0003", "0004", "0005", "0006"]
-                if curr_id in order:
-                    next_idx = (order.index(curr_id) + 1) % len(order)
-                    self.master_rotation["next_master_id"] = order[next_idx]
+                self.master_rotation["next_master_id"] = None
                 self.master_rotation["master_confirmed"] = True
                 self.master_rotation["last_change_epoch"] = int(time.time() * 1000)
                 self.master_rotation["last_change_reason"] = "Transição Dinâmica de Liderança (Watchdog Eleição)"
