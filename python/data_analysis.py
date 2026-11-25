@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 ===============================================================================
@@ -3326,30 +3326,17 @@ class LiveTelemetryEngine:
             for k, v in kwargs.items():
                 if v is not None:
                     st[k] = v
-
         st = self.node_states[node_id]
-        if st.get("role") == "Master" or kwargs.get("role") == "Master":
-            order = ["0001", "0002", "0003", "0004", "0005", "0006"]
-            prev_m = self.master_rotation.get("current_master_id")
-            if prev_m != node_id:
-                self.master_rotation["prev_master_id"] = prev_m
-                self.master_rotation["current_master_id"] = node_id
-                self.master_rotation["master_confirmed"] = True
-                self.master_rotation["last_change_epoch"] = int(time.time() * 1000)
-                self.master_rotation["last_change_reason"] = "Transição Dinâmica de Liderança"
-                self.master_rotation["active_master_source"] = "TELEMETRIA_UART"
-                if node_id in order:
-                    next_idx = (order.index(node_id) + 1) % len(order)
-                    self.master_rotation["next_master_id"] = order[next_idx]
-                else:
-                    self.master_rotation["next_master_id"] = "0002"
-                for nid, ns in self.node_states.items():
-                    if nid != node_id and ns.get("role") == "Master":
-                        ns["role"] = "Slave"
-            elif not self.master_rotation.get("next_master_id") or self.master_rotation.get("next_master_id") == node_id:
-                if node_id in order:
-                    next_idx = (order.index(node_id) + 1) % len(order)
-                    self.master_rotation["next_master_id"] = order[next_idx]
+        # FIDELIDADE ESTRITA: O papel (role) e o Master so sao alterados quando
+        # explicitamente reportados pelo hardware via mensagens UART dedicadas ([SWARM:ROLE] ou ID).
+        # Nao deduzir rotacoes nem inventar transicoes de lideranca com base em respostas TWR/TDoA.
+        if kwargs.get('role') == 'Master':
+            st['role'] = 'Master'
+            curr_m = self.master_rotation.get('current_master_id')
+            if curr_m is None:
+                self.master_rotation['current_master_id'] = node_id
+        elif kwargs.get('role') == 'Slave':
+            st['role'] = 'Slave'
         mode = kwargs.get("mode") or st.get("mode", "")
         if "tdoa_ts" not in st: st["tdoa_ts"] = []
         if "twr_ts" not in st: st["twr_ts"] = []
