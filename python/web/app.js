@@ -1277,6 +1277,7 @@ function switchDetailTab(tabName) {
     // Renderizar conteúdo específico da aba ativa
     if (tabName === 'summary') renderTabSummary();
     else if (tabName === 'temporal') renderTabTemporal();
+    else if (tabName === 'multilat-3d' && typeof window.renderTabMultilat3D === 'function') window.renderTabMultilat3D();
     else if (tabName === 'raw-data') renderTabRawData();
     else if (tabName === 'notes') renderTabNotes();
 }
@@ -3234,6 +3235,10 @@ async function pollLiveStatus() {
         if (!window._lastSwarmDynRenderMs || (nowSwarmMs - window._lastSwarmDynRenderMs) >= 200) {
             window._lastSwarmDynRenderMs = nowSwarmMs;
             renderSwarmDynamicTable(data);
+            const live3dWrap = document.getElementById('live-multilat-3d-collapsible');
+            if (live3dWrap && live3dWrap.style.display !== 'none' && window.LiveMultilat3D) {
+                window.LiveMultilat3D.pollLive3D();
+            }
         }
     } catch (e) {
         console.error('[pollLiveStatus] Erro na atualizacao:', e);
