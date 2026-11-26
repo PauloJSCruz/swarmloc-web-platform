@@ -2417,6 +2417,39 @@ table.scientific-table tr:hover td {
     color: #38bdf8;
 }
 
+.uwb-quick-pill.active {
+    background: rgba(56, 189, 248, 0.22);
+    border-color: rgba(56, 189, 248, 0.65);
+    color: #38bdf8;
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
+}
+
+.uwb-quick-links-bar {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(20, 30, 50, 0.88) 100%) !important;
+    border: 1px solid rgba(56, 189, 248, 0.22) !important;
+    border-radius: 6px !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3) !important;
+    backdrop-filter: blur(10px);
+    transition: all 0.15s ease;
+}
+
+.uwb-quick-link-chip {
+    height: 22px;
+    padding: 2px 7px;
+    border-radius: 5px;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.uwb-quick-link-chip:hover {
+    opacity: 1 !important;
+    transform: translateY(-0.5px);
+    border-color: var(--chip-accent, #38bdf8) !important;
+}
+
+.uwb-quick-link-chip.is-isolated {
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.32) !important;
+}
+
 /* Swarm Coordination & Master Status Bar (Ultra-Slim Line ~22px) */
 .swarm-rotation-bar-slim {
     display: flex;

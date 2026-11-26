@@ -422,8 +422,11 @@
                 pairs: new Set(),       // '0001-0002', 'hub-0002', etc.
                 directions: new Set(),  // '0001->0002:tdoa', etc.
                 protocol: 'all',        // 'all' | 'tdoa' | 'twr'
-                scope: 'primary'        // Padrão: 'primary' (Só Hub - foco no par Master-Slave)
+                scope: 'primary',       // Padrão: 'primary' (Só Hub - foco no par Master-Slave)
+                hideAllLinks: false     // Quando true ('Nenhum'), oculta temporariamente todas as séries RF
             };
+            this.detectedPairs = new Set();
+            this._lastQuickLinksSignature = '';
 
             // Dados
             this.chart = null;
@@ -1025,6 +1028,20 @@
                     </div>
                 </div>
 
+                <!-- 1.5. Barra de Seletor Rápido de Links RF (Toggle Chips Visíveis no Topo) -->
+                <div id="${uid}-quick-links-bar" class="uwb-quick-links-bar" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:6px; padding:4px 8px; background:rgba(15,23,42,0.88); border:1px solid rgba(56,189,248,0.22); border-radius:6px;">
+                    <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; min-width:0;">
+                        <span class="uwb-quick-links-label" style="font-size:10px; font-weight:800; color:var(--cyan); text-transform:uppercase; letter-spacing:0.4px; display:inline-flex; align-items:center; gap:4px; margin-right:2px;">
+                            <span>🔗 Links RF:</span>
+                        </span>
+                        <button type="button" class="uwb-quick-pill uwb-quick-link-action active" id="${uid}-btn-quick-links-all" title="Mostrar todos os links RF ativos no gráfico">Todos</button>
+                        <button type="button" class="uwb-quick-pill uwb-quick-link-action" id="${uid}-btn-quick-links-none" title="Ocultar todos os links RF do gráfico">Nenhum</button>
+                        <div style="width:1px; height:14px; background:rgba(255,255,255,0.12); margin:0 2px;"></div>
+                        <div id="${uid}-quick-links-chips" class="uwb-quick-links-chips" style="display:inline-flex; align-items:center; gap:5px; flex-wrap:wrap;"></div>
+                    </div>
+                    <div id="${uid}-quick-links-summary" style="font-size:9.5px; font-family:var(--font-mono); color:var(--text-muted); flex-shrink:0;"></div>
+                </div>
+
                 <!-- 2. Painel de Filtros Retrátil e Modular (Alta Densidade e Reorganização Completa) -->
                 <div id="${uid}-filters-panel" class="uwb-chart-filters-panel" style="display:none; margin-bottom:8px; background:rgba(15,23,42,0.95); border:1px solid rgba(56,189,248,0.25); border-radius:8px; padding:8px 12px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
                     
@@ -1180,7 +1197,7 @@
             // 1. Checkboxes Módulos
             container.querySelectorAll(`.${uid}-cb-mod`).forEach(cb => {
                 cb.addEventListener('change', () => {
-                    if (cb.checked) this.filters.modules.add(cb.value);
+                    if (cb.checked) { this.filters.hideAllLinks = false; this.filters.modules.add(cb.value); }
                     else this.filters.modules.delete(cb.value);
                     this.applyFiltersAndRebuild();
                 });
@@ -1236,7 +1253,7 @@
             // 3. Pares com o Hub
             container.querySelectorAll(`.${uid}-cb-hub-pair`).forEach(cb => {
                 cb.addEventListener('change', () => {
-                    if (cb.checked) this.filters.pairs.add(cb.value);
+                    if (cb.checked) { this.filters.hideAllLinks = false; this.filters.pairs.add(cb.value); }
                     else this.filters.pairs.delete(cb.value);
                     this.applyFiltersAndRebuild();
                 });
@@ -1271,6 +1288,7 @@
                     container.querySelectorAll(`.${uid}-cb-hub-pair`).forEach(cb => { cb.checked = false; });
                     this.filters.pairs.clear();
                     if (pVal) {
+                        this.filters.hideAllLinks = false;
                         this.filters.pairs.add(pVal);
                     }
                     this.applyFiltersAndRebuild();
@@ -1375,7 +1393,233 @@
                     btnToggleFilters.style.borderColor = isHidden ? 'var(--cyan)' : 'rgba(56,189,248,0.4)';
                 });
             }
+            // Botões de Seletor Rápido de Links RF (Todos / Nenhum)
+            const btnQuickAll = document.getElementById(`${uid}-btn-quick-links-all`);
+            if (btnQuickAll) {
+                btnQuickAll.addEventListener('click', () => {
+                    this.selectAllQuickLinks();
+                });
+            }
+            const btnQuickNone = document.getElementById(`${uid}-btn-quick-links-none`);
+            if (btnQuickNone) {
+                btnQuickNone.addEventListener('click', () => {
+                    this.selectNoQuickLinks();
+                });
+            }
+
+            this.renderQuickLinkChips(true);
             this.updateFilterBadge();
+        }
+
+        getAvailableRfPairs() {
+            const master = (window.LiveState?.currentMasterId || '0001').toUpperCase().padStart(4, '0');
+            const pairsSet = new Set();
+
+            // 1. Pares detetados nos registos brutos ou buffers de canal
+            if (this.detectedPairs && this.detectedPairs.size > 0) {
+                this.detectedPairs.forEach(p => pairsSet.add(p));
+            }
+            if (this.channelBuffers && this.channelBuffers.size > 0) {
+                this.channelBuffers.forEach((arr, chKey) => {
+                    if (!arr || arr.length === 0) return;
+                    const parts = String(chKey).replace(/:(tdoa|twr)$/i, '').split('->');
+                    if (parts.length === 2) {
+                        const s = normalizeId(parts[0]);
+                        const d = normalizeId(parts[1]);
+                        if (s && d && s !== '0000' && d !== '0000' && s !== d) {
+                            pairsSet.add([s, d].sort().join('-'));
+                        }
+                    }
+                });
+            }
+            if (this.rawRecords && this.rawRecords.length > 0) {
+                const scanLim = Math.min(this.rawRecords.length, 2500);
+                const startIdx = this.rawRecords.length - scanLim;
+                for (let i = startIdx; i < this.rawRecords.length; i++) {
+                    const r = this.rawRecords[i];
+                    if (!r) continue;
+                    const s = normalizeId(r.src || r.src_addr || '');
+                    const d = normalizeId(r.dst || r.dst_addr || '');
+                    if (s && d && s !== '0000' && d !== '0000' && s !== d && !s.includes('*') && !d.includes('*')) {
+                        const pairKey = [s, d].sort().join('-');
+                        pairsSet.add(pairKey);
+                        this.detectedPairs.add(pairKey);
+                    }
+                }
+            }
+
+            // 2. Garantir sempre os pares canónicos primários (0001 <-> 0002, 0001 <-> 0003, 0001 <-> 0004)
+            // mais quaisquer outros escravos ativos no enxame
+            ['0002', '0003', '0004'].forEach(slaveId => {
+                if (slaveId !== master) {
+                    pairsSet.add([master, slaveId].sort().join('-'));
+                }
+            });
+
+            return Array.from(pairsSet).sort((a, b) => {
+                const aHasMaster = a.includes(master) ? 0 : 1;
+                const bHasMaster = b.includes(master) ? 0 : 1;
+                if (aHasMaster !== bHasMaster) return aHasMaster - bHasMaster;
+                return a.localeCompare(b);
+            });
+        }
+
+        toggleQuickLinkPair(pairKey) {
+            if (!pairKey) return;
+            const uid = this.canvasId;
+
+            if (this.filters.hideAllLinks) {
+                this.filters.hideAllLinks = false;
+                this.filters.pairs.clear();
+                this.filters.pairs.add(pairKey);
+            } else if (this.filters.pairs.size === 0) {
+                // Estava em modo "Todos": clicar num chip isola imediatamente esse link RF
+                this.filters.pairs.clear();
+                this.filters.pairs.add(pairKey);
+            } else if (this.filters.pairs.has(pairKey)) {
+                this.filters.pairs.delete(pairKey);
+            } else {
+                this.filters.pairs.add(pairKey);
+            }
+
+            // Se o par selecionado for inter-escravos (Mesh) e o scope estiver restrito a 'primary', alargar para 'all'
+            const master = (window.LiveState?.currentMasterId || '0001').toUpperCase().padStart(4, '0');
+            if (this.filters.pairs.has(pairKey) && !pairKey.includes(master) && this.filters.scope === 'primary') {
+                this.filters.scope = 'all';
+            }
+
+            // Sincronizar checkboxes e dropdown do painel retrátil
+            document.querySelectorAll(`.${uid}-cb-hub-pair`).forEach(cb => {
+                const nid = cb.value.replace('hub-', '');
+                const hubPair = [master, nid].sort().join('-');
+                cb.checked = this.filters.pairs.has(cb.value) || this.filters.pairs.has(hubPair);
+            });
+            const selPair = document.getElementById(`${uid}-select-pair`);
+            if (selPair) {
+                selPair.value = (this.filters.pairs.size === 1) ? Array.from(this.filters.pairs)[0] : '';
+            }
+
+            this.syncFilterButtonsUI();
+            this.renderQuickLinkChips(true);
+            this.applyFiltersAndRebuild();
+        }
+
+        selectAllQuickLinks() {
+            const uid = this.canvasId;
+            this.filters.hideAllLinks = false;
+            this.filters.pairs.clear();
+            this.filters.modules.clear();
+            this.filters.directions.clear();
+
+            document.querySelectorAll(`.${uid}-cb-mod, .${uid}-cb-hub-pair, .${uid}-cb-dir`).forEach(cb => {
+                cb.checked = false;
+            });
+            const selPair = document.getElementById(`${uid}-select-pair`);
+            if (selPair) selPair.value = '';
+
+            this.syncFilterButtonsUI();
+            this.renderQuickLinkChips(true);
+            this.applyFiltersAndRebuild();
+        }
+
+        selectNoQuickLinks() {
+            const uid = this.canvasId;
+            this.filters.hideAllLinks = true;
+            this.filters.pairs.clear();
+            this.filters.modules.clear();
+            this.filters.directions.clear();
+
+            document.querySelectorAll(`.${uid}-cb-mod, .${uid}-cb-hub-pair, .${uid}-cb-dir`).forEach(cb => {
+                cb.checked = false;
+            });
+            const selPair = document.getElementById(`${uid}-select-pair`);
+            if (selPair) selPair.value = '';
+
+            this.syncFilterButtonsUI();
+            this.renderQuickLinkChips(true);
+            this.applyFiltersAndRebuild();
+        }
+
+        renderQuickLinkChips(force = false) {
+            const uid = this.canvasId;
+            const chipsContainer = document.getElementById(`${uid}-quick-links-chips`);
+            if (!chipsContainer) return;
+
+            const master = (window.LiveState?.currentMasterId || '0001').toUpperCase().padStart(4, '0');
+            const availablePairs = this.getAvailableRfPairs();
+            const isNone = Boolean(this.filters.hideAllLinks);
+            const isAll = !isNone && this.filters.pairs.size === 0 && this.filters.modules.size === 0 && this.filters.directions.size === 0;
+
+            const activeSet = new Set();
+            availablePairs.forEach(pairKey => {
+                if (isNone) return;
+                if (isAll) {
+                    activeSet.add(pairKey);
+                    return;
+                }
+                const [nA, nB] = pairKey.split('-');
+                const isPrimary = (nA === master || nB === master);
+                const remoteNode = (nA === master) ? nB : ((nB === master) ? nA : null);
+
+                let pairActive = false;
+                if (this.filters.pairs.size > 0) {
+                    pairActive = this.filters.pairs.has(pairKey) ||
+                        (isPrimary && remoteNode && this.filters.pairs.has(`hub-${remoteNode}`));
+                } else if (this.filters.modules.size > 0) {
+                    pairActive = this.filters.modules.has(nA) || this.filters.modules.has(nB);
+                } else {
+                    pairActive = true;
+                }
+                if (pairActive) activeSet.add(pairKey);
+            });
+
+            const sig = `${master}|${isAll}|${isNone}|${availablePairs.join(',')}|${Array.from(activeSet).join(',')}`;
+            if (!force && this._lastQuickLinksSignature === sig) {
+                return;
+            }
+            this._lastQuickLinksSignature = sig;
+
+            const btnAll = document.getElementById(`${uid}-btn-quick-links-all`);
+            const btnNone = document.getElementById(`${uid}-btn-quick-links-none`);
+            if (btnAll) btnAll.classList.toggle('active', isAll);
+            if (btnNone) btnNone.classList.toggle('active', isNone);
+
+            chipsContainer.innerHTML = availablePairs.map(pairKey => {
+                const [nA, nB] = pairKey.split('-');
+                const isPrimary = (nA === master || nB === master);
+                const remoteNode = (nA === master) ? nB : ((nB === master) ? nA : nB);
+                const palette = NODE_PALETTES[remoteNode] || NODE_PALETTES['0002'];
+                const accent = isPrimary ? (palette.tdoa?.border || palette.twrMtoS?.border || '#38bdf8') : '#94a3b8';
+                const isChecked = activeSet.has(pairKey);
+                const isIsolated = !isAll && !isNone && activeSet.has(pairKey);
+                const labelText = `${nA} ↔ ${nB}`;
+
+                return `
+                    <label class="uwb-filter-chip uwb-quick-link-chip ${isChecked ? 'is-active' : 'is-muted'} ${isIsolated ? 'is-isolated' : ''}" data-pair="${pairKey}" style="--chip-accent:${accent}; cursor:pointer; display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:5px; border:1px solid ${isChecked ? accent : 'rgba(255,255,255,0.12)'}; background:${isChecked ? 'rgba(15,23,42,0.92)' : 'rgba(15,23,42,0.45)'}; opacity:${isChecked ? '1' : '0.55'};" title="Alternar link RF 0x${nA} ↔ 0x${nB} (clique para isolar/alternar)">
+                        <input type="checkbox" class="${uid}-cb-quick-link uwb-custom-checkbox" value="${pairKey}" ${isChecked ? 'checked' : ''} style="--cb-color:${accent}; cursor:pointer;">
+                        <span style="width:6px; height:6px; border-radius:50%; background:${accent}; box-shadow:${isChecked ? `0 0 6px ${accent}` : 'none'}; display:inline-block;"></span>
+                        <span style="font-family:var(--font-mono); font-size:10px; font-weight:700; color:${isChecked ? '#f8fafc' : '#94a3b8'};">${labelText}</span>
+                    </label>
+                `;
+            }).join('');
+
+            chipsContainer.querySelectorAll(`.${uid}-cb-quick-link`).forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    e.stopPropagation();
+                    this.toggleQuickLinkPair(cb.value);
+                });
+            });
+
+            const summaryEl = document.getElementById(`${uid}-quick-links-summary`);
+            if (summaryEl) {
+                if (isNone) {
+                    summaryEl.innerHTML = '<span style="color:#f87171;">0 links visíveis (Ocultos)</span>';
+                } else if (isAll) {
+                    summaryEl.innerHTML = `<span style="color:#38bdf8;">Todos os links (${availablePairs.length})</span>`;
+                } else {
+                    summaryEl.innerHTML = `<span style="color:#fbbf24;">${activeSet.size}/${availablePairs.length} links ativos</span>`;
+                }
+            }
         }
 
         syncFilterButtonsUI() {
@@ -1405,8 +1649,9 @@
             const hasDir = this.filters.directions.size > 0;
             const hasProto = this.filters.protocol && this.filters.protocol !== 'all';
             const hasScope = this.filters.scope && this.filters.scope !== 'all';
+            const hasHideAll = Boolean(this.filters.hideAllLinks);
 
-            if (!hasMod && !hasPair && !hasDir && !hasProto && !hasScope) {
+            if (!hasMod && !hasPair && !hasDir && !hasProto && !hasScope && !hasHideAll) {
                 badge.textContent = '(Todos)';
                 badge.style.color = '#38bdf8';
                 badge.style.background = 'rgba(56,189,248,0.22)';
@@ -1458,6 +1703,7 @@
             this.filters.directions.clear();
             this.filters.protocol = 'all';
             this.filters.scope = 'primary';
+            this.filters.hideAllLinks = false;
 
             const uid = this.canvasId;
             document.querySelectorAll(`.${uid}-cb-mod, .${uid}-cb-hub-pair, .${uid}-cb-dir`).forEach(cb => {
@@ -1467,6 +1713,7 @@
             if (selPair) selPair.value = '';
 
             this.syncFilterButtonsUI();
+            this.renderQuickLinkChips(true);
             this.updateFilterBadge();
             this.applyFiltersAndRebuild();
         }
@@ -1508,6 +1755,7 @@
         }
 
         matchesFilters(r) {
+            if (this.filters.hideAllLinks) return false;
             const src = normalizeId(r.src || r.src_addr || '');
             const dst = normalizeId(r.dst || r.dst_addr || '');
 
@@ -1775,6 +2023,7 @@
         applyFiltersAndRebuild(smoothMinT, smoothMaxT) {
             if (!this.chart) this.initChart();
             if (!this.chart) return;
+            this.renderQuickLinkChips();
             this.updateFilterBadge();
 
             // 1. Identificar t0 de hardware (filtrando anomalias não-inicializadas < 1s)

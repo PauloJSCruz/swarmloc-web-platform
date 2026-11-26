@@ -4561,6 +4561,7 @@ function setLiveEntityFilter(mode = 'all', value = null) {
         if (mode === 'all') {
             LiveState.unifiedChart.clearFilters();
         } else if (mode === 'module') {
+            LiveState.unifiedChart.filters.hideAllLinks = false;
             LiveState.unifiedChart.filters.modules.clear();
             LiveState.unifiedChart.filters.pairs.clear();
             LiveState.unifiedChart.filters.directions.clear();
@@ -4568,8 +4569,10 @@ function setLiveEntityFilter(mode = 'all', value = null) {
             LiveState.unifiedChart.filters.modules.add(clean);
             document.querySelectorAll(`.live-chart-cb-mod`).forEach(cb => { cb.checked = (cb.value === clean); });
             document.querySelectorAll(`.live-chart-cb-pair, .live-chart-cb-dir`).forEach(cb => { cb.checked = false; });
+            if (typeof LiveState.unifiedChart.renderQuickLinkChips === 'function') LiveState.unifiedChart.renderQuickLinkChips(true);
             LiveState.unifiedChart.applyFiltersAndRebuild();
         } else if (mode === 'pair') {
+            LiveState.unifiedChart.filters.hideAllLinks = false;
             LiveState.unifiedChart.filters.modules.clear();
             LiveState.unifiedChart.filters.pairs.clear();
             LiveState.unifiedChart.filters.directions.clear();
@@ -4578,8 +4581,10 @@ function setLiveEntityFilter(mode = 'all', value = null) {
             LiveState.unifiedChart.filters.pairs.add(pairKey);
             document.querySelectorAll(`.live-chart-cb-pair`).forEach(cb => { cb.checked = (cb.value === pairKey); });
             document.querySelectorAll(`.live-chart-cb-mod, .live-chart-cb-dir`).forEach(cb => { cb.checked = false; });
+            if (typeof LiveState.unifiedChart.renderQuickLinkChips === 'function') LiveState.unifiedChart.renderQuickLinkChips(true);
             LiveState.unifiedChart.applyFiltersAndRebuild();
         } else if (mode === 'direction') {
+            LiveState.unifiedChart.filters.hideAllLinks = false;
             LiveState.unifiedChart.filters.modules.clear();
             LiveState.unifiedChart.filters.pairs.clear();
             LiveState.unifiedChart.filters.directions.clear();
@@ -4588,6 +4593,7 @@ function setLiveEntityFilter(mode = 'all', value = null) {
             LiveState.unifiedChart.filters.directions.add(dirKey);
             document.querySelectorAll(`.live-chart-cb-dir`).forEach(cb => { cb.checked = (cb.value === dirKey); });
             document.querySelectorAll(`.live-chart-cb-mod, .live-chart-cb-pair`).forEach(cb => { cb.checked = false; });
+            if (typeof LiveState.unifiedChart.renderQuickLinkChips === 'function') LiveState.unifiedChart.renderQuickLinkChips(true);
             LiveState.unifiedChart.applyFiltersAndRebuild();
         }
     }

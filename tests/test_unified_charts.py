@@ -85,7 +85,9 @@ class TestUnifiedChartsArchitecture(unittest.TestCase):
 
     def test_06_filter_intersection_logic(self):
         """Requisito 6: Simulação exata da lógica de interseção de filtros em JavaScript."""
-        def matches_filters(record, selected_modules, selected_pairs, selected_directions):
+        def matches_filters(record, selected_modules, selected_pairs, selected_directions, hide_all=False):
+            if hide_all:
+                return False
             src = record.get("src", "").replace("0x", "").zfill(4).upper()
             dst = record.get("dst", "").replace("0x", "").zfill(4).upper()
 
@@ -117,6 +119,9 @@ class TestUnifiedChartsArchitecture(unittest.TestCase):
         filtered_all = [r for r in records if matches_filters(r, set(), set(), set())]
         self.assertEqual(len(filtered_all), 6)
 
+        filtered_none = [r for r in records if matches_filters(r, set(), set(), set(), hide_all=True)]
+        self.assertEqual(len(filtered_none), 0)
+
         filtered_m2 = [r for r in records if matches_filters(r, {"0002"}, set(), set())]
         self.assertEqual([r["id"] for r in filtered_m2], [1, 2])
 
@@ -136,6 +141,17 @@ class TestUnifiedChartsArchitecture(unittest.TestCase):
         """Requisito 7: Valores nulos/em falta não são substituídos por zero nem ligados (spanGaps: false)."""
         self.assertIn("spanGaps: false", self.unified_js, "Datasets devem ter spanGaps: false para não ligar falsamente dados nulos")
         self.assertIn("r.distance_m !== undefined && r.distance_m !== null", self.unified_js)
+
+    def test_08_quick_rf_link_filter_selector_bar(self):
+        """Requisito 8: Barra de seletor rápido de Links RF com botões Todos, Nenhum e toggle chips individuais."""
+        self.assertIn("uwb-quick-links-bar", self.unified_js, "Barra de seletor rápido de links RF deve existir")
+        self.assertIn("btn-quick-links-all", self.unified_js, "Botão 'Todos' do seletor rápido de links deve existir")
+        self.assertIn("btn-quick-links-none", self.unified_js, "Botão 'Nenhum' do seletor rápido de links deve existir")
+        self.assertIn("toggleQuickLinkPair", self.unified_js, "Método toggleQuickLinkPair deve existir em UnifiedUwbChart")
+        self.assertIn("selectAllQuickLinks", self.unified_js, "Método selectAllQuickLinks deve existir em UnifiedUwbChart")
+        self.assertIn("selectNoQuickLinks", self.unified_js, "Método selectNoQuickLinks deve existir em UnifiedUwbChart")
+        self.assertIn("renderQuickLinkChips", self.unified_js, "Método renderQuickLinkChips deve existir em UnifiedUwbChart")
+        self.assertIn("hideAllLinks", self.unified_js, "Estado hideAllLinks ('Nenhum') deve ser suportado em matchesFilters")
 
 
 if __name__ == "__main__":
