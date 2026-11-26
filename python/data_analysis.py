@@ -103,22 +103,6 @@ except ImportError:
         SwarmTimelineReconstructor,
     )
 
-# Módulo de Multilateração Euclidiana 3D e Acumulador Espacial
-try:
-    from multilat import (
-        DEFAULT_ANCHORS,
-        euclidean_multilat_solve_4pt,
-        MeasurementAccumulator,
-        compute_trial_3d_positions,
-    )
-except ImportError:
-    from python.multilat import (
-        DEFAULT_ANCHORS,
-        euclidean_multilat_solve_4pt,
-        MeasurementAccumulator,
-        compute_trial_3d_positions,
-    )
-
 # Importar validador de integridade e checksum FNV-1a
 try:
     from download_raw import compute_fnv1a, verify_binary_dump
@@ -1208,90 +1192,8 @@ GLOBAL_STATE = {
     "trials": {},            # trial_id -> trial_data_dict
     "catalog": [],           # list of trial summaries for the catalog UI
     "files_meta": {},        # filename -> meta
-    "latest_trial_id": None,
-    "anchors": dict(DEFAULT_ANCHORS)
+    "latest_trial_id": None
 }
-
-def get_active_anchors_map() -> dict:
-    """Retorna o dicionário de âncoras 3D atuais {int_node_id: (x, y, z)}."""
-    anchors = GLOBAL_STATE.get("anchors")
-    if not anchors:
-        GLOBAL_STATE["anchors"] = dict(DEFAULT_ANCHORS)
-        anchors = GLOBAL_STATE["anchors"]
-    return dict(anchors)
-
-def format_anchors_json(anchors_map: dict = None) -> dict:
-    """Formata o mapa de âncoras com chaves hexadecimais '0x0001': [x, y, z]."""
-    amap = anchors_map if anchors_map is not None else get_active_anchors_map()
-    return {f"0x{int(nid):04X}": [round(float(pos[0]), 4), round(float(pos[1]), 4), round(float(pos[2]), 4)] for nid, pos in sorted(amap.items())}
-
-def update_active_anchors(payload_anchors: dict, reset: bool = False) -> dict:
-    """Atualiza as coordenadas 3D (X, Y, Z) das âncoras em GLOBAL_STATE."""
-    if reset:
-        GLOBAL_STATE["anchors"] = dict(DEFAULT_ANCHORS)
-        return get_active_anchors_map()
-    if not isinstance(payload_anchors, dict):
-        raise ValueError("Formato de âncoras inválido (esperado objeto JSON)")
-    current = dict(get_active_anchors_map())
-    for k, coords in payload_anchors.items():
-        k_str = str(k).strip()
-        try:
-            nid = int(k_str, 16) if (k_str.lower().startswith("0x") or any(c in k_str.lower() for c in "abcdef")) else int(k_str, 16 if len(k_str) == 4 else 10)
-        except ValueError:
-            continue
-        if isinstance(coords, (list, tuple)) and len(coords) >= 3:
-            x, y, z = float(coords[0]), float(coords[1]), float(coords[2])
-        elif isinstance(coords, dict) and all(axis in coords for axis in ("x", "y", "z")):
-            x, y, z = float(coords["x"]), float(coords["y"]), float(coords["z"])
-        else:
-            continue
-        if any(math.isnan(v) or math.isinf(v) for v in (x, y, z)):
-            continue
-        current[nid] = (round(x, 4), round(y, 4), round(z, 4))
-    GLOBAL_STATE["anchors"] = current
-    return current
-
-def prepare_records_for_multilat(records: list) -> list:
-    """Prepara registos para o acumulador 3D garantindo identificação do nó âncora remoto
-    mesmo quando o registo foi gravado pelo Master (src_addr=0x0001, dst_addr=0x0002..0x0006)."""
-    if not records:
-        return []
-    normalized = []
-    distinct_srcs = set()
-    for r in records:
-        rc = dict(r)
-        if "distance_m" not in rc or rc["distance_m"] is None:
-            if rc.get("dist_m") is not None:
-                rc["distance_m"] = float(rc["dist_m"])
-            elif rc.get("dist_cm") is not None:
-                rc["distance_m"] = float(rc["dist_cm"]) / 100.0
-        if "timestamp_ms" not in rc or rc["timestamp_ms"] is None:
-            if rc.get("t_rel_s") is not None:
-                rc["timestamp_ms"] = int(round(float(rc["t_rel_s"]) * 1000.0))
-            else:
-                rc["timestamp_ms"] = 0
-        if "src_addr" not in rc and "src" in rc:
-            rc["src_addr"] = f"0x{str(rc['src']).upper().replace('0X', '').zfill(4)}"
-        if "dst_addr" not in rc and "dst" in rc:
-            rc["dst_addr"] = f"0x{str(rc['dst']).upper().replace('0X', '').zfill(4)}"
-        normalized.append(rc)
-        dist = rc.get("distance_m")
-        if dist is None or dist <= 0:
-            continue
-        s = str(rc.get("src_addr", "")).upper().replace("0X", "").zfill(4)
-        if s and s != "0000" and s != "FFFF":
-            distinct_srcs.add(s)
-    if len(distinct_srcs) >= 4:
-        return normalized
-    prepared = []
-    for rc in normalized:
-        s = str(rc.get("src_addr", "")).upper().replace("0X", "").zfill(4)
-        d = str(rc.get("dst_addr", "")).upper().replace("0X", "").zfill(4)
-        if s == "0001" and d not in ("0000", "0001", "FFFF", ""):
-            rc["src_addr"] = f"0x{d}"
-            rc["dst_addr"] = "0x0001"
-        prepared.append(rc)
-    return prepared
 
 DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 
@@ -3458,126 +3360,6 @@ class LiveTelemetryEngine:
                 if dt_span > 1e-4:
                     st["twr_freq_hz"] = round((len(ts_list) - 1) / dt_span, 1)
 
-    def get_live_3d_position(self, anchors_map: dict = None, max_age_ms: int = 5000) -> dict:
-        """Calcula a posição 3D instantânea e trajetória recente a partir da telemetria live ativa."""
-        with self.lock:
-            amap = anchors_map if anchors_map is not None else get_active_anchors_map()
-            now_epoch = time.time()
-            now_ms = int(now_epoch * 1000)
-            acc = MeasurementAccumulator(default_max_age_ms=max_age_ms)
-            active_measurements = {}
-
-            # 1. Alimentar a partir de mensagens recentes de telemetria
-            recent_records = []
-            for m in self.messages[-400:]:
-                dist = m.get("distance_m")
-                if dist is None:
-                    dist = m.get("dist_m")
-                if dist is None and m.get("dist_cm") is not None:
-                    dist = float(m.get("dist_cm")) / 100.0
-                if dist is None:
-                    dist = (m.get("parsed") or {}).get("dist_m")
-                if dist is None or float(dist) <= 0.0:
-                    continue
-                nid_str = str(m.get("node_id") or m.get("src_addr") or m.get("src") or "").upper().replace("0X", "").zfill(4)
-                dst_str = str(m.get("dst_addr") or m.get("dst") or "").upper().replace("0X", "").zfill(4)
-                if nid_str == "0001" and dst_str not in ("0000", "0001", "FFFF", ""):
-                    peer_hex = f"0x{dst_str}"
-                elif nid_str not in ("0000", "FFFF", ""):
-                    peer_hex = f"0x{nid_str}"
-                else:
-                    continue
-                t_ms = int(float(m.get("epoch", now_epoch)) * 1000)
-                recent_records.append({
-                    "seq": m.get("seq", m.get("id", 0)),
-                    "timestamp_ms": t_ms,
-                    "src_addr": peer_hex,
-                    "dst_addr": "0x0001",
-                    "distance_m": float(dist)
-                })
-
-            # 2. Alimentar o acumulador instantâneo com o estado atual dos nós ativos
-            for nid_key, st in self.node_states.items():
-                if nid_key in ("0000", "FFFF"):
-                    continue
-                dist = st.get("last_dist_m")
-                last_seen = st.get("last_seen", 0)
-                if dist is not None and float(dist) > 0.0 and last_seen > 0:
-                    try:
-                        nid_int = int(str(nid_key).replace("0x", "").replace("0X", ""), 16)
-                    except ValueError:
-                        continue
-                    ts_ms = int(float(last_seen) * 1000)
-                    acc.push(nid_int, float(dist), ts_ms)
-                    age_ms = max(0, now_ms - ts_ms)
-                    if age_ms <= max_age_ms:
-                        active_measurements[f"0x{nid_int:04X}"] = {
-                            "distance_m": round(float(dist), 4),
-                            "timestamp_ms": ts_ms,
-                            "age_ms": age_ms
-                        }
-
-            # Se também houver registos recentes nas mensagens, garantir que estão no acumulador
-            for r in recent_records[-32:]:
-                try:
-                    nid_int = int(r["src_addr"], 16)
-                    acc.push(nid_int, float(r["distance_m"]), int(r["timestamp_ms"]))
-                    age_ms = max(0, now_ms - int(r["timestamp_ms"]))
-                    if age_ms <= max_age_ms:
-                        active_measurements[f"0x{nid_int:04X}"] = {
-                            "distance_m": round(float(r["distance_m"]), 4),
-                            "timestamp_ms": int(r["timestamp_ms"]),
-                            "age_ms": age_ms
-                        }
-                except Exception:
-                    pass
-
-            distinct_count = acc.get_distinct_count(now_ms, max_age_ms=max_age_ms)
-            current_pos = None
-            solver_status = "WAITING_4_ANCHORS"
-
-            if acc.has_4_distinct(now_ms, max_age_ms=max_age_ms, require_unconsumed=False, require_all_new=False):
-                extracted = acc.extract_4_distinct(now_ms, max_age_ms=max_age_ms)
-                if extracted:
-                    node_ids, dists = extracted
-                    if all(nid in amap for nid in node_ids):
-                        anchors_pts = [amap[nid] for nid in node_ids]
-                        pos, residual, st_str = euclidean_multilat_solve_4pt(anchors_pts, dists)
-                        solver_status = st_str
-                        if st_str == "OK" and pos is not None:
-                            current_pos = {
-                                "timestamp_ms": now_ms,
-                                "time_s": round(now_ms / 1000.0, 3),
-                                "x": round(pos[0], 4),
-                                "y": round(pos[1], 4),
-                                "z": round(pos[2], 4),
-                                "residual_rms": round(residual, 4),
-                                "node_ids": [f"0x{nid:04X}" for nid in node_ids],
-                                "distances_m": [round(d, 3) for d in dists]
-                            }
-
-            # Calcular trajetória recente em modo sliding
-            traj_res = compute_trial_3d_positions(recent_records, anchors_map=amap, max_age_ms=max_age_ms, mode="sliding")
-            trajectory = traj_res["trajectory"]
-            stats = traj_res["stats"]
-            if current_pos and (not trajectory or (trajectory[-1]["x"], trajectory[-1]["y"], trajectory[-1]["z"]) != (current_pos["x"], current_pos["y"], current_pos["z"])):
-                trajectory.append(current_pos)
-                stats["count"] = len(trajectory)
-                if len(trajectory) == 1:
-                    stats["mean_pos"] = [current_pos["x"], current_pos["y"], current_pos["z"]]
-                    stats["mean_residual_rms"] = current_pos["residual_rms"]
-
-            return {
-                "status": "success",
-                "solver_status": solver_status,
-                "distinct_anchors_count": distinct_count,
-                "position": current_pos,
-                "trajectory": trajectory[-200:],
-                "anchors": format_anchors_json(amap),
-                "active_measurements": active_measurements,
-                "stats": stats
-            }
-
     def get_status(self, since_id=0):
         with self.lock:
             # Purgar nó fantasma 0000 se o nó real 0001 estiver ativo
@@ -4182,46 +3964,6 @@ class SwarmLocHttpHandler(http.server.BaseHTTPRequestHandler):
                 "files_meta": GLOBAL_STATE["files_meta"],
                 "notes": load_trial_metadata()
             })
-            return
-
-        # 3.5 API REST: Coordenadas 3D das Âncoras e Multilateração 3D
-        if path == "/api/anchors":
-            self.send_json_response({
-                "status": "success",
-                "anchors": format_anchors_json()
-            })
-            return
-
-        if path == "/api/live/3d":
-            query = urllib.parse.parse_qs(url.query)
-            max_age_ms = int(query.get("max_age_ms", [5000])[0])
-            res_3d = GLOBAL_TELEMETRY_ENGINE.get_live_3d_position(max_age_ms=max_age_ms)
-            self.send_json_response(res_3d)
-            return
-
-        if path.startswith("/api/trial/") and path.endswith("/3d"):
-            trial_id = urllib.parse.unquote(path[len("/api/trial/"):-len("/3d")]).strip("/")
-            if trial_id in GLOBAL_STATE["trials"]:
-                trial_data = GLOBAL_STATE["trials"][trial_id]
-                query = urllib.parse.parse_qs(url.query)
-                mode = query.get("mode", ["batch"])[0]
-                max_age_ms = int(query.get("max_age_ms", [2000])[0])
-                raw_recs = trial_data.get("records", [])
-                prepared_recs = prepare_records_for_multilat(raw_recs)
-                amap = get_active_anchors_map()
-                res_3d = compute_trial_3d_positions(prepared_recs, anchors_map=amap, max_age_ms=max_age_ms, mode=mode)
-                # Caso o modo batch estrito não encontre 4 nós novos na mesma janela mas sliding encontre, usar sliding como fallback automático
-                if not res_3d["trajectory"] and mode == "batch":
-                    res_3d = compute_trial_3d_positions(prepared_recs, anchors_map=amap, max_age_ms=max_age_ms, mode="sliding")
-                self.send_json_response({
-                    "status": "success",
-                    "trial_id": trial_id,
-                    "trajectory": res_3d["trajectory"],
-                    "anchors": format_anchors_json(amap),
-                    "stats": res_3d["stats"]
-                })
-            else:
-                self.send_json_response({"status": "error", "error": "Ensaio não encontrado"}, status_code=404)
             return
 
         # 4. API REST: Detalhe do Ensaio (suporta filtragem por módulo, ligação, sentido, protocolo e intervalo temporal)
@@ -4845,23 +4587,6 @@ class SwarmLocHttpHandler(http.server.BaseHTTPRequestHandler):
                 "trials": GLOBAL_STATE["catalog"],
                 "new_files_found": found
             })
-            return
-
-        # 2.9 API REST: Atualizar Coordenadas 3D das Âncoras
-        if path == "/api/anchors":
-            content_length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(content_length) if content_length > 0 else b"{}"
-            try:
-                payload = json.loads(body.decode("utf-8")) if body else {}
-                reset_flag = bool(payload.get("reset", False))
-                anchors_in = payload.get("anchors", payload) if not reset_flag else {}
-                updated = update_active_anchors(anchors_in, reset=reset_flag)
-                self.send_json_response({
-                    "status": "success",
-                    "anchors": format_anchors_json(updated)
-                })
-            except Exception as e:
-                self.send_json_response({"status": "error", "error": str(e)}, status_code=400)
             return
 
         # 3. Guardar Notas e Ground-Truth do Ensaio

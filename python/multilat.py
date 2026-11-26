@@ -16,14 +16,9 @@ Funcionalidades:
 import math
 from typing import Dict, List, Optional, Tuple, Any
 
-DEFAULT_ANCHORS: Dict[int, Tuple[float, float, float]] = {
-    0x0001: (0.0, 0.0, 1.5),
-    0x0002: (5.0, 0.0, 1.5),
-    0x0003: (0.0, 5.0, 1.5),
-    0x0004: (5.0, 5.0, 2.5),
-    0x0005: (2.5, 0.0, 1.5),
-    0x0006: (2.5, 5.0, 2.5),
-}
+# Sem coordenadas predefinidas arbitrárias: o firmware transmite apenas distâncias 1D escalares
+# entre nós da rede. Qualquer cálculo 3D requer coordenadas explicitamente fornecidas pelo utilizador.
+DEFAULT_ANCHORS: Dict[int, Tuple[float, float, float]] = {}
 
 
 def euclidean_multilat_solve_4pt(
