@@ -57,12 +57,12 @@ const AppState = {
 // Garante distinção absoluta de cores (ângulos de matiz separados) e formas de ponto
 
 const NODE_COLORS = {
-    '0001': { border: '#00e5ff', bg: 'rgba(0, 229, 255, 0.2)', text: '#00e5ff', label: 'Node 0x0001 (Master)' },
-    '0002': { border: '#00f59b', bg: 'rgba(0, 245, 155, 0.2)', text: '#00f59b', label: 'Node 0x0002 (Slave)' },
-    '0003': { border: '#ffb703', bg: 'rgba(255, 183, 3, 0.2)', text: '#ffb703', label: 'Node 0x0003 (Slave)' },
-    '0004': { border: '#f72585', bg: 'rgba(247, 37, 133, 0.2)', text: '#f72585', label: 'Node 0x0004 (Slave)' },
-    '0005': { border: '#14b8a6', bg: 'rgba(20, 184, 166, 0.2)', text: '#14b8a6', label: 'Node 0x0005 (Slave)' },
-    '0006': { border: '#fb7185', bg: 'rgba(251, 113, 133, 0.2)', text: '#fb7185', label: 'Node 0x0006 (Slave)' },
+    '0001': { border: '#00e5ff', bg: 'rgba(0, 229, 255, 0.2)', text: '#00e5ff', label: 'Nó 1 (0x0001)' },
+    '0002': { border: '#00f59b', bg: 'rgba(0, 245, 155, 0.2)', text: '#00f59b', label: 'Nó 2 (0x0002)' },
+    '0003': { border: '#ffb703', bg: 'rgba(255, 183, 3, 0.2)', text: '#ffb703', label: 'Nó 3 (0x0003)' },
+    '0004': { border: '#f72585', bg: 'rgba(247, 37, 133, 0.2)', text: '#f72585', label: 'Nó 4 (0x0004)' },
+    '0005': { border: '#14b8a6', bg: 'rgba(20, 184, 166, 0.2)', text: '#14b8a6', label: 'Nó 5 (0x0005)' },
+    '0006': { border: '#fb7185', bg: 'rgba(251, 113, 133, 0.2)', text: '#fb7185', label: 'Nó 6 (0x0006)' },
     'default': { border: '#38bdf8', bg: 'rgba(56, 189, 248, 0.2)', text: '#38bdf8', label: 'Nó' }
 };
 
@@ -521,105 +521,7 @@ function formatStatsStripHtml(values, metricTitle = 'Distância Medida', unit = 
 }
 
 
-function switchStatsHistMode(mode) {
-    AppState.statsHistMode = mode;
-    ['subpanels', 'boxcomp', 'ecdfcomp', 'residuals', 'global'].forEach(m => {
-        const btn = document.getElementById(`btn-mode-${m}`);
-        if (btn) btn.classList.toggle('active', m === mode);
-    });
-    renderTabStats();
-}
 
-function switchStatsTool(tool) {
-    AppState.statsToolView = tool;
-    
-    // Se o utilizador estiver em "Todos os Links" e clicar numa ferramenta comparativa específica
-    const select = document.getElementById('stats-link-select');
-    if (select && select.value === 'all') {
-        if (tool === 'box') {
-            switchStatsHistMode('boxcomp');
-            return;
-        } else if (tool === 'ecdf') {
-            switchStatsHistMode('ecdfcomp');
-            return;
-        } else if (tool === 'hist') {
-            switchStatsHistMode('subpanels');
-            return;
-        }
-    }
-    
-    applyStatsToolVisibility();
-    setTimeout(() => {
-        ['histDist', 'ecdfDist', 'qqDist', 'boxDist'].forEach(k => {
-            if (AppState.charts[k]) AppState.charts[k].resize();
-        });
-    }, 50);
-}
-
-function applyStatsToolVisibility() {
-    const tool = AppState.statsToolView || 'all';
-    const histCard = document.getElementById('stats-histogram-main-card');
-    const advGrid = document.getElementById('stats-advanced-distributions-grid');
-    const ecdfCard = document.getElementById('stats-ecdf-card');
-    const qqCard = document.getElementById('stats-qq-card');
-    const boxCard = document.getElementById('stats-box-card');
-
-    ['all', 'hist', 'ecdf', 'qq', 'box'].forEach(t => {
-        const btn = document.getElementById(`btn-tool-${t}`);
-        if (btn) btn.classList.toggle('active', t === tool);
-    });
-
-    if (tool === 'all') {
-        if (histCard) histCard.style.display = 'block';
-        if (advGrid) {
-            advGrid.style.display = 'grid';
-            advGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(420px, 1fr))';
-        }
-        if (ecdfCard) ecdfCard.style.display = 'block';
-        if (qqCard) qqCard.style.display = 'block';
-        if (boxCard) boxCard.style.display = 'block';
-    } else if (tool === 'hist') {
-        if (histCard) histCard.style.display = 'block';
-        if (advGrid) advGrid.style.display = 'none';
-    } else if (tool === 'ecdf') {
-        if (histCard) histCard.style.display = 'none';
-        if (advGrid) {
-            advGrid.style.display = 'block';
-            advGrid.style.gridTemplateColumns = '1fr';
-        }
-        if (ecdfCard) ecdfCard.style.display = 'block';
-        if (qqCard) qqCard.style.display = 'none';
-        if (boxCard) boxCard.style.display = 'none';
-    } else if (tool === 'qq') {
-        if (histCard) histCard.style.display = 'none';
-        if (advGrid) {
-            advGrid.style.display = 'block';
-            advGrid.style.gridTemplateColumns = '1fr';
-        }
-        if (ecdfCard) ecdfCard.style.display = 'none';
-        if (qqCard) qqCard.style.display = 'block';
-        if (boxCard) boxCard.style.display = 'none';
-    } else if (tool === 'box') {
-        if (histCard) histCard.style.display = 'none';
-        if (advGrid) {
-            advGrid.style.display = 'block';
-            advGrid.style.gridTemplateColumns = '1fr';
-        }
-        if (ecdfCard) ecdfCard.style.display = 'none';
-        if (qqCard) qqCard.style.display = 'none';
-        if (boxCard) boxCard.style.display = 'block';
-    }
-}
-
-function onDensityToggleChange() {
-    const chkGauss = document.getElementById('chk-hist-gauss');
-    const chkKde = document.getElementById('chk-hist-kde');
-    AppState.densityToggles = {
-        gauss: chkGauss ? chkGauss.checked : true,
-        kde: chkKde ? chkKde.checked : true
-    };
-    renderTabStats();
-}
 
 // ==============================================================================
 // 1. INICIALIZAÇÃO E COMUNICAÇÃO COM O BACKEND
@@ -1278,7 +1180,6 @@ function switchDetailTab(tabName) {
     if (tabName === 'summary') renderTabSummary();
     else if (tabName === 'temporal') renderTabTemporal();
     else if (tabName === 'raw-data') renderTabRawData();
-    else if (tabName === 'notes') renderTabNotes();
 }
 
 // ------------------------------------------------------------------------------
@@ -2006,124 +1907,6 @@ window.closeProvenanceModal = closeProvenanceModal;
 
 
 
-// ------------------------------------------------------------------------------
-// ABA F: Notas e Contexto Experimental (com Ground-Truth por Nó/Link)
-// ------------------------------------------------------------------------------
-function renderTabNotes() {
-    const data = AppState.activeTrialDetail;
-    if (!data) return;
-    const notes = data.user_notes || {};
-    
-    const titleEl = document.getElementById('note-trial-title');
-    const campEl = document.getElementById('note-trial-campaign');
-    const commEl = document.getElementById('note-trial-comments');
-    if (titleEl) titleEl.value = notes.title || '';
-    if (campEl) campEl.value = notes.campaign || '';
-    if (commEl) commEl.value = notes.comments || '';
-    
-    // Distâncias nominais ground-truth por nó/link
-    const container = document.getElementById('notes-ref-distances-container');
-    if (container) {
-        // Obter nós presentes no ensaio
-        let nodes = (data.trial_info?.nodes || []).map(n => n.replace(/^0x/i, '')).filter(n => n !== '0001');
-        if (nodes.length === 0) {
-            const groupDsts = (data.groups || []).map(g => (g.dst || '').replace(/^0x/i, ''));
-            nodes = [...new Set(groupDsts)].filter(n => n && n !== '0001');
-        }
-        
-        const refDistances = notes.ref_distances || {};
-        
-        if (nodes.length > 0) {
-            container.innerHTML = nodes.map(node => {
-                const col = getNodeColor(node);
-                const currentVal = (refDistances[node] !== undefined && refDistances[node] !== null)
-                    ? refDistances[node] 
-                    : (notes.ref_distance_m !== undefined && notes.ref_distance_m !== null ? notes.ref_distance_m : '');
-                    
-                return `
-                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--bg-card); padding:10px 14px; border:1px solid var(--border-default); border-radius:var(--radius-sm);">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span class="node-pill" style="border-color:${col.border}; color:${col.border}; font-weight:700;">Nó 0x${escapeHtml(node)}</span>
-                            <span style="font-size:12px; color:var(--text-muted);">Link Master (0x0001) ↔ Slave (0x${escapeHtml(node)})</span>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size:12px; color:var(--text-main); font-weight:600;">Distância Nominal:</span>
-                            <input type="number" step="0.001" class="input-text ref-node-input" data-node="${escapeHtml(node)}" value="${escapeHtml(String(currentVal))}" placeholder="Ex: 1.020" style="width:110px; text-align:right;">
-                            <span style="font-size:12px; color:var(--text-muted);">metros</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        } else {
-            container.innerHTML = `
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <input type="number" step="0.001" id="single-ref-dist-input" class="input-text" value="${escapeHtml(String(notes.ref_distance_m || ''))}" placeholder="Ex: 2.000" style="width:160px;">
-                    <span style="font-size:12px; color:var(--text-muted);">metros</span>
-                </div>
-            `;
-        }
-    }
-}
-window.renderTabNotes = renderTabNotes;
-
-async function saveTrialNotes() {
-    if (!AppState.currentTrialId) return;
-    
-    const title = (document.getElementById('note-trial-title')?.value || '').trim();
-    const campaign = (document.getElementById('note-trial-campaign')?.value || '').trim();
-    const comments = (document.getElementById('note-trial-comments')?.value || '').trim();
-    
-    // Recolher distâncias nominais por nó
-    const ref_distances = {};
-    const nodeInputs = document.querySelectorAll('.ref-node-input');
-    let firstRefM = null;
-    
-    nodeInputs.forEach(input => {
-        const node = input.getAttribute('data-node');
-        const valStr = input.value.trim();
-        if (valStr !== '') {
-            const val = parseFloat(valStr);
-            if (!isNaN(val)) {
-                ref_distances[node] = val;
-                if (firstRefM === null) firstRefM = val;
-            }
-        }
-    });
-    
-    const singleInput = document.getElementById('single-ref-dist-input');
-    if (singleInput && singleInput.value.trim() !== '') {
-        const val = parseFloat(singleInput.value.trim());
-        if (!isNaN(val)) firstRefM = val;
-    }
-    
-    setLoading(true);
-    try {
-        const resp = await fetch('/api/notes', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                trial_id: AppState.currentTrialId,
-                title,
-                campaign,
-                ref_distance_m: firstRefM,
-                ref_distances,
-                comments
-            })
-        });
-        
-        if (!resp.ok) throw new Error(`HTTP error: ${resp.status}`);
-        showToast('Metadados e distâncias de referência por nó guardados com sucesso!', 'success');
-        
-        // Recarregar dados do ensaio atual e catálogo
-        await loadCatalog();
-        await openTrialDetail(AppState.currentTrialId);
-    } catch (err) {
-        showToast('Erro ao guardar notas no servidor', 'error');
-    } finally {
-        setLoading(false);
-    }
-}
-window.saveTrialNotes = saveTrialNotes;
 
 // ==============================================================================
 // 5. VISTA: COMPARAÇÃO MULTI-ENSAIO
@@ -2894,11 +2677,6 @@ function escapeHtml(str) {
 }
 
 // Exportações globais para interação HTML/DOM
-window.switchStatsHistMode = switchStatsHistMode;
-window.switchStatsTool = switchStatsTool;
-window.onDensityToggleChange = onDensityToggleChange;
-
-
 window.zoomChartById = zoomChartById;
 window.resetChartZoomById = resetChartZoomById;
 window.toggleDragBoxZoom = toggleDragBoxZoom;
@@ -2910,22 +2688,22 @@ window.renderTabTemporal = renderTabTemporal;
 // ==============================================================================
 
 const DEFAULT_LIVE_LINKS = [
-    { key: '0001->0002', src: '0001', dst: '0002', label: '👑 M01 → S02', fullLabel: 'Módulo 1 → Módulo 2 [Direta 0.550m ±15mm]' },
-    { key: '0002->0001', src: '0002', dst: '0001', label: '📡 S02 → M01', fullLabel: 'Módulo 2 → Módulo 1 [Direta 0.550m ±15mm]' },
-    { key: '0001->0003', src: '0001', dst: '0003', label: '👑 M01 → S03', fullLabel: 'Módulo 1 → Módulo 3 [Direta 0.300m ±15mm]' },
-    { key: '0003->0001', src: '0003', dst: '0001', label: '📡 S03 → M01', fullLabel: 'Módulo 3 → Módulo 1 [Direta 0.300m ±15mm]' },
-    { key: '0001->0004', src: '0001', dst: '0004', label: '👑 M01 → S04', fullLabel: 'Módulo 1 → Módulo 4 [Direta 0.850m ±15mm]' },
-    { key: '0004->0001', src: '0004', dst: '0001', label: '📡 S04 → M01', fullLabel: 'Módulo 4 → Módulo 1 [Direta 0.850m ±15mm]' },
-    { key: '0002->0003', src: '0002', dst: '0003', label: '📡 S02 → S03', fullLabel: 'Módulo 2 → Módulo 3 [Derivada 0.250m ±30mm]' },
-    { key: '0003->0002', src: '0003', dst: '0002', label: '📡 S03 → S02', fullLabel: 'Módulo 3 → Módulo 2 [Derivada 0.250m ±30mm]' },
-    { key: '0002->0004', src: '0002', dst: '0004', label: '📡 S02 → S04', fullLabel: 'Módulo 2 → Módulo 4 [Derivada 0.300m ±30mm]' },
-    { key: '0004->0002', src: '0004', dst: '0002', label: '📡 S04 → S02', fullLabel: 'Módulo 4 → Módulo 2 [Derivada 0.300m ±30mm]' },
-    { key: '0003->0004', src: '0003', dst: '0004', label: '📡 S03 → S04', fullLabel: 'Módulo 3 → Módulo 4 [Derivada 0.550m ±30mm]' },
-    { key: '0004->0003', src: '0004', dst: '0003', label: '📡 S04 → S03', fullLabel: 'Módulo 4 → Módulo 3 [Derivada 0.550m ±30mm]' },
-    { key: '0001->0005', src: '0001', dst: '0005', label: '👑 M01 → S05', fullLabel: 'Módulo 1 → Módulo 5 [Direta]' },
-    { key: '0005->0001', src: '0005', dst: '0001', label: '📡 S05 → M01', fullLabel: 'Módulo 5 → Módulo 1 [Direta]' },
-    { key: '0001->0006', src: '0001', dst: '0006', label: '👑 M01 → S06', fullLabel: 'Módulo 1 → Módulo 6 [Direta]' },
-    { key: '0006->0001', src: '0006', dst: '0001', label: '📡 S06 → M01', fullLabel: 'Módulo 6 → Módulo 1 [Direta]' }
+    { key: '0001->0002', src: '0001', dst: '0002', label: '📡 N01 → N02', fullLabel: 'Nó 1 (0x0001) → Nó 2 (0x0002)' },
+    { key: '0002->0001', src: '0002', dst: '0001', label: '📡 N02 → N01', fullLabel: 'Nó 2 (0x0002) → Nó 1 (0x0001)' },
+    { key: '0001->0003', src: '0001', dst: '0003', label: '📡 N01 → N03', fullLabel: 'Nó 1 (0x0001) → Nó 3 (0x0003)' },
+    { key: '0003->0001', src: '0003', dst: '0001', label: '📡 N03 → N01', fullLabel: 'Nó 3 (0x0003) → Nó 1 (0x0001)' },
+    { key: '0001->0004', src: '0001', dst: '0004', label: '📡 N01 → N04', fullLabel: 'Nó 1 (0x0001) → Nó 4 (0x0004)' },
+    { key: '0004->0001', src: '0004', dst: '0001', label: '📡 N04 → N01', fullLabel: 'Nó 4 (0x0004) → Nó 1 (0x0001)' },
+    { key: '0002->0003', src: '0002', dst: '0003', label: '📡 N02 → N03', fullLabel: 'Nó 2 (0x0002) → Nó 3 (0x0003)' },
+    { key: '0003->0002', src: '0003', dst: '0002', label: '📡 N03 → N02', fullLabel: 'Nó 3 (0x0003) → Nó 2 (0x0002)' },
+    { key: '0002->0004', src: '0002', dst: '0004', label: '📡 N02 → N04', fullLabel: 'Nó 2 (0x0002) → Nó 4 (0x0004)' },
+    { key: '0004->0002', src: '0004', dst: '0002', label: '📡 N04 → N02', fullLabel: 'Nó 4 (0x0004) → Nó 2 (0x0002)' },
+    { key: '0003->0004', src: '0003', dst: '0004', label: '📡 N03 → N04', fullLabel: 'Nó 3 (0x0003) → Nó 4 (0x0004)' },
+    { key: '0004->0003', src: '0004', dst: '0003', label: '📡 N04 → N03', fullLabel: 'Nó 4 (0x0004) → Nó 3 (0x0003)' },
+    { key: '0001->0005', src: '0001', dst: '0005', label: '📡 N01 → N05', fullLabel: 'Nó 1 (0x0001) → Nó 5 (0x0005)' },
+    { key: '0005->0001', src: '0005', dst: '0001', label: '📡 N05 → N01', fullLabel: 'Nó 5 (0x0005) → Nó 1 (0x0001)' },
+    { key: '0001->0006', src: '0001', dst: '0006', label: '📡 N01 → N06', fullLabel: 'Nó 1 (0x0001) → Nó 6 (0x0006)' },
+    { key: '0006->0001', src: '0006', dst: '0001', label: '📡 N06 → N01', fullLabel: 'Nó 6 (0x0006) → Nó 1 (0x0001)' }
 ];
 
 const LiveState = {
@@ -3187,24 +2965,19 @@ async function pollLiveStatus() {
             let changeEpoch = rot.last_change_epoch || (rot.last_master_change_elapsed_s ? Date.now() - rot.last_master_change_elapsed_s * 1000 : 0);
             if (changeEpoch > 0 && changeEpoch < 1e11) changeEpoch *= 1000;
             LiveState.lastMasterChangeEpoch = changeEpoch;
-            LiveState.lastMasterChangeReason = rot.last_change_reason || rot.last_master_change_reason || 'Inicialização do Protocolo Hardware';
+            LiveState.lastMasterChangeReason = rot.last_change_reason || rot.last_master_change_reason || 'A aguardar telemetria UART';
             LiveState.lastMasterSeenEpoch = rot.last_master_seen_epoch || 0;
             LiveState.activeMasterSource = 'TELEMETRIA_UART';
         } else if (data.nodes) {
-            // Fallback robusto se o backend ainda estiver a emitir formato legado
+            // Fidelidade 1:1 UART: só confirmar Master se um nó reportar explicitamente role === 'Master'
             const nodesArr = Object.values(data.nodes);
-            const activeMaster = nodesArr.find(n => (n.role && n.role.toLowerCase() === 'master') || n.node_id === '0000' || n.node_id === '0001' || n.port === 'COM6');
-            if (activeMaster && activeMaster.is_online) {
-                LiveState.currentMasterId = String(activeMaster.node_id || '0001').replace(/^0x/i, '').padStart(4, '0');
+            const activeMaster = nodesArr.find(n => (n.role && n.role.toLowerCase() === 'master') && n.is_online);
+            if (activeMaster && activeMaster.node_id) {
+                LiveState.currentMasterId = String(activeMaster.node_id).replace(/^0x/i, '').padStart(4, '0');
                 LiveState.masterConfirmed = true;
                 LiveState.prevMasterId = null;
-                LiveState.nextMasterId = '0002';
-                LiveState.lastMasterChangeReason = 'Master Físico Ativo (COM6 / Beacons)';
-                LiveState.activeMasterSource = 'TELEMETRIA_UART';
-            } else if (LiveState.isConnected) {
-                LiveState.currentMasterId = '0001';
-                LiveState.masterConfirmed = true;
-                LiveState.lastMasterChangeReason = 'Master Padrão SwarmLoc (COM6)';
+                LiveState.nextMasterId = null;
+                LiveState.lastMasterChangeReason = 'Master reportado via UART';
                 LiveState.activeMasterSource = 'TELEMETRIA_UART';
             }
         }
@@ -3254,7 +3027,7 @@ function updateLiveMasterRotationUI() {
 
     if (!crownBadge) return;
 
-    const effectiveMasterId = LiveState.currentMasterId || (LiveState.isConnected ? '0001' : null);
+    const effectiveMasterId = (LiveState.masterConfirmed && LiveState.currentMasterId) ? LiveState.currentMasterId : null;
     const hasMaster = Boolean(effectiveMasterId);
 
     if (hasMaster && effectiveMasterId) {
@@ -3262,9 +3035,9 @@ function updateLiveMasterRotationUI() {
         if (crownIcon) crownIcon.textContent = '👑';
         if (crownText) crownText.innerHTML = `MASTER: <strong style="color:#ffffff;">0x${escapeHtml(effectiveMasterId)}</strong>`;
     } else {
-        crownBadge.style.color = '#f87171';
-        if (crownIcon) crownIcon.textContent = '⚠️';
-        if (crownText) crownText.textContent = 'Sem master';
+        crownBadge.style.color = '#94a3b8';
+        if (crownIcon) crownIcon.textContent = '📡';
+        if (crownText) crownText.innerHTML = `MASTER: <strong style="color:#ffffff;">--</strong>`;
     }
 
     if (prevVal) {
@@ -3290,11 +3063,11 @@ function updateLiveMasterRotationUI() {
                 lastTime.textContent = 'Em regime';
             }
         } else {
-            lastTime.textContent = 'Em regime';
+            lastTime.textContent = '--';
         }
     }
     if (reasonText) {
-        reasonText.textContent = LiveState.lastMasterChangeReason || 'Inicialização do Protocolo Hardware';
+        reasonText.textContent = LiveState.lastMasterChangeReason || 'A aguardar telemetria UART';
     }
 
     if (sourcePill) {
@@ -3343,12 +3116,11 @@ function renderLiveNodeCards(nodes) {
     sortedKeys.forEach(nid => {
         const n = nodes[nid];
         const cleanNid = String(n.node_id || nid || '').replace(/^0x/i, '').padStart(4, '0');
-        // Identificação rigorosa do Master físico:
-        const isPhysicalMaster = Boolean(cleanNid === '0000' || cleanNid === '0001' || n.port === 'COM6' || (n.role && n.role.toLowerCase() === 'master'));
+        // Identificação estritamente baseada na telemetria UART recebida:
         const isConfirmedMaster = Boolean(
             (LiveState.masterConfirmed && LiveState.currentMasterId)
                 ? (cleanNid === String(LiveState.currentMasterId).replace(/^0x/i, '').padStart(4, '0'))
-                : (n.role && n.role.toLowerCase() === 'master' ? true : (cleanNid === '0001' || cleanNid === '0000'))
+                : Boolean(n.role && n.role.toLowerCase() === 'master')
         );
         const isDesignatedNext = Boolean(LiveState.nextMasterId && cleanNid === LiveState.nextMasterId && !isConfirmedMaster);
         const isMaster = isConfirmedMaster;
@@ -3371,16 +3143,12 @@ function renderLiveNodeCards(nodes) {
         const dtStr = (n.dt_sec !== null && n.dt_sec !== undefined) ? `Δt=${n.dt_sec}s` : 'Sem receção';
 
         let distDisplay = '--';
-        if (isMaster) {
-            distDisplay = 'Hub Coordenador';
-        } else if (n.last_dist_m !== null && n.last_dist_m !== undefined) {
+        if (n.last_dist_m !== null && n.last_dist_m !== undefined) {
             distDisplay = `${parseFloat(n.last_dist_m).toFixed(4)} m`;
         }
 
         let tdoaDisplay = '--';
-        if (isMaster) {
-            tdoaDisplay = 'Relógio Base (0 ns)';
-        } else if (n.last_tdoa !== null && n.last_tdoa !== undefined) {
+        if (n.last_tdoa !== null && n.last_tdoa !== undefined) {
             const v = parseFloat(n.last_tdoa);
             tdoaDisplay = Math.abs(v) < 1000 ? `${v >= 0 ? '+' : ''}${v.toFixed(3)} ns` : `${v.toFixed(0)} ticks`;
         } else if (n.last_dist_m !== null && n.last_dist_m !== undefined) {
@@ -3389,9 +3157,7 @@ function renderLiveNodeCards(nodes) {
         }
 
         let driftDisplay = '--';
-        if (isMaster) {
-            driftDisplay = '0.00 ppm (Base)';
-        } else if (n.clock_drift_ppm !== null && n.clock_drift_ppm !== undefined) {
+        if (n.clock_drift_ppm !== null && n.clock_drift_ppm !== undefined) {
             const d = parseFloat(n.clock_drift_ppm);
             if (!isNaN(d) && Math.abs(d) <= 50.0) {
                 driftDisplay = `${d >= 0 ? '+' : ''}${d.toFixed(3)} ppm`;
@@ -3403,13 +3169,11 @@ function renderLiveNodeCards(nodes) {
             const tg_us = parseInt(n.t_global_us, 10);
             const tg_s = (tg_us / 1000000.0).toFixed(6);
             const tg_ns = (BigInt(tg_us) * 1000n).toString();
-            tgDisplay = `${tg_ns} ns ~= ${tg_s} s${isMaster ? ' (Base)' : ''}`;
+            tgDisplay = `${tg_ns} ns ~= ${tg_s} s${isMaster ? ' (Master)' : ''}`;
         }
 
         let errorDisplay = '--';
-        if (isMaster) {
-            errorDisplay = '<span style="color:#38bdf8; font-weight:700;">0.0 cm</span> <span style="color:#94a3b8; font-size:10px;">(Relógio Base)</span>';
-        } else if (n.real_error_m !== null && n.real_error_m !== undefined) {
+        if (n.real_error_m !== null && n.real_error_m !== undefined) {
             const errM = parseFloat(n.real_error_m);
             let errStr = '';
             if (Math.abs(errM) >= 1.0) {
@@ -3680,8 +3444,9 @@ function formatConsoleNodeTag(m) {
         return '[SISTEMA] ';
     }
     const nid = m.node_id ? String(m.node_id).toUpperCase().padStart(4, '0') : '';
-    const isMaster = (m.role && m.role.toLowerCase() === 'master') || nid === '0001' || port === 'COM6';
-    const roleLabel = isMaster ? '👑 Master' : (m.role ? `📡 ${m.role}` : '📡 Slave');
+    const activeMaster = (LiveState.masterConfirmed && LiveState.currentMasterId) ? String(LiveState.currentMasterId).toUpperCase().padStart(4, '0') : null;
+    const isMaster = Boolean((m.role && m.role.toLowerCase() === 'master') || (activeMaster && nid === activeMaster));
+    const roleLabel = isMaster ? '👑 Master' : (m.role ? `📡 ${m.role}` : '📡 Nó');
 
     const cycleNum = (m.algo_cycle !== undefined && m.algo_cycle !== null) ? m.algo_cycle : ((m.seq !== undefined && m.seq !== null) ? m.seq : null);
     const rawNum = (m.seq_raw !== undefined && m.seq_raw !== null) ? m.seq_raw : ((m.parsed && m.parsed.seq !== undefined) ? m.parsed.seq : null);
@@ -3696,9 +3461,6 @@ function formatConsoleNodeTag(m) {
 
     if (nid) {
         return `${cycleTag}[${roleLabel} 0x${nid} | ${port}] `;
-    }
-    if (port === 'COM6') {
-        return `${cycleTag}[👑 Master 0x0001 | COM6] `;
     }
     return `${cycleTag}[${port}] `;
 }
@@ -3754,7 +3516,8 @@ function shouldShowConsoleMessage(m, typeFilter, nodeFilter) {
             // Permitir visibilidade de comandos de sistema
         } else {
             const nid = (m.node_id || '').toUpperCase();
-            const isMaster = (m.role && m.role.toLowerCase() === 'master') || nid === '0001' || (m.port && m.port === 'COM6');
+            const activeMaster = (LiveState.masterConfirmed && LiveState.currentMasterId) ? String(LiveState.currentMasterId).toUpperCase().padStart(4, '0') : null;
+            const isMaster = Boolean((m.role && m.role.toLowerCase() === 'master') || (activeMaster && nid === activeMaster));
             if (nF === 'slaves' && isMaster) return false;
             if (nF === 'master' && !isMaster) return false;
             if (nF !== 'slaves' && nF !== 'master') {
@@ -3763,12 +3526,6 @@ function shouldShowConsoleMessage(m, typeFilter, nodeFilter) {
                 if (!matches && m.port) {
                     const matchedState = LiveState.nodes && LiveState.nodes[targetNid];
                     if (matchedState && matchedState.port === m.port) matches = true;
-                    if (targetNid === '0001' && (m.port === 'COM6' || m.port === 'COM12')) matches = true;
-                    if (targetNid === '0002' && m.port === 'COM5') matches = true;
-                    if (targetNid === '0003' && (m.port === 'COM7' || m.port === 'COM11')) matches = true;
-                    if (targetNid === '0004' && m.port === 'COM4') matches = true;
-                    if (targetNid === '0005' && m.port === 'COM13') matches = true;
-                    if (targetNid === '0006' && m.port === 'COM14') matches = true;
                 }
                 if (!matches) return false;
             }
@@ -4805,102 +4562,102 @@ function renderSwarmDynamicTable(data) {
     if (!tbody) return;
 
     const rot = (data && data.master_rotation) || {};
-    const activeMaster = rot.current_master_id || LiveState.currentMasterId || '0001';
+    const masterConfirmed = Boolean(rot.master_confirmed !== undefined ? rot.master_confirmed : LiveState.masterConfirmed);
+    const activeMaster = masterConfirmed ? (rot.current_master_id || LiveState.currentMasterId || null) : null;
     const nodes = (data && data.nodes) || {};
 
+    const swarmNodeIds = ['0001', '0002', '0003', '0004', '0005', '0006'];
+    const onlineCount = swarmNodeIds.filter(nid => nodes[nid] && nodes[nid].is_online).length;
+
     if (masterBadge) {
-        masterBadge.textContent = `Master Atual: 0x${activeMaster}`;
+        masterBadge.textContent = `Master Atual: ${activeMaster ? '0x' + activeMaster : '--'}`;
     }
     if (slotBadge) {
-        const slotNum = parseInt(activeMaster, 16) || 1;
-        slotBadge.textContent = `Slot ${slotNum} (M${slotNum}) | Ciclo 60s`;
+        slotBadge.textContent = `Nós Ativos: ${onlineCount} / 6`;
     }
 
-    // Geometria 1D colinear confirmada (E8.46): x1=0, x3=0.30m, x2=0.55m, x4=0.85m
-    const refMap = {
-        '0001-0002': { ref: 0.55, u: 0.015, origin: 'DIRETA' },
-        '0002-0001': { ref: 0.55, u: 0.015, origin: 'DIRETA' },
-        '0001-0003': { ref: 0.30, u: 0.015, origin: 'DIRETA' },
-        '0003-0001': { ref: 0.30, u: 0.015, origin: 'DIRETA' },
-        '0001-0004': { ref: 0.85, u: 0.015, origin: 'DIRETA' },
-        '0004-0001': { ref: 0.85, u: 0.015, origin: 'DIRETA' },
-        '0002-0003': { ref: 0.25, u: 0.030, origin: 'DERIVADA' },
-        '0003-0002': { ref: 0.25, u: 0.030, origin: 'DERIVADA' },
-        '0002-0004': { ref: 0.30, u: 0.030, origin: 'DERIVADA' },
-        '0004-0002': { ref: 0.30, u: 0.030, origin: 'DERIVADA' },
-        '0003-0004': { ref: 0.55, u: 0.030, origin: 'DERIVADA' },
-        '0004-0003': { ref: 0.55, u: 0.030, origin: 'DERIVADA' }
-    };
-
-    const swarmNodeIds = ['0001', '0002', '0003', '0004', '0005', '0006'];
     let html = '';
 
     swarmNodeIds.forEach(nodeId => {
         const nState = nodes[nodeId] || {};
-        const isSelfMaster = (nodeId === activeMaster);
+        const isOnline = Boolean(nState.is_online);
+        const isSelfMaster = Boolean(
+            (activeMaster && nodeId === activeMaster) ||
+            (nState.role && nState.role.toLowerCase() === 'master')
+        );
 
-        let distHtml = '';
-        let tgHtml = '';
-        let syncHtml = '';
-        let validHtml = '';
-
+        let roleHtml = '<span class="badge badge-gray">--</span>';
         if (isSelfMaster) {
-            distHtml = `<span style="color:var(--amber); font-weight:700;">👑 Nó Referência (Master)</span>`;
-            tgHtml = nState.t_global_s ? `<span class="mono-cell">${Number(nState.t_global_s).toFixed(6)} s</span>` : `<span style="color:var(--text-muted); font-size:11px;">Origem de Tempo (0.000s)</span>`;
-            syncHtml = `<span class="badge badge-emerald">Origem Relógio (Master)</span>`;
-            validHtml = `<span class="prov-badge prov-module">Referência Ativa</span>`;
-        } else {
-            const pairKey = `${activeMaster}-${nodeId}`;
-            const refEntry = refMap[pairKey];
-            const measDist = nState.last_dist_m;
+            roleHtml = '<span class="badge" style="background:rgba(234,179,8,0.2); color:#facc15; border:1px solid rgba(234,179,8,0.45); font-weight:700;">👑 Master</span>';
+        } else if (nState.role) {
+            roleHtml = `<span class="badge badge-cyan">📡 ${escapeHtml(nState.role)}</span>`;
+        }
 
-            if (measDist !== null && measDist !== undefined && nState.is_online) {
-                const distNum = Number(measDist);
-                if (refEntry !== undefined) {
-                    const refDist = refEntry.ref;
-                    const errMm = (distNum - refDist) * 1000.0;
-                    const originTag = (refEntry.origin === 'DIRETA') ? 'Direta ±15mm' : 'Derivada ±30mm';
-                    distHtml = `<strong>${distNum.toFixed(4)} m</strong> <span style="font-size:10px; color:var(--text-muted);">(Ref: ${refDist.toFixed(3)}m [${originTag}], Δ: ${errMm > 0 ? '+' : ''}${errMm.toFixed(1)}mm)</span>`;
-                } else {
-                    distHtml = `<strong>${distNum.toFixed(4)} m</strong> <span style="font-size:10px; color:var(--text-muted);">(Sem Referência)</span>`;
-                }
-            } else {
-                distHtml = `<span style="color:var(--text-muted); font-style:italic;">Sem medição recente</span>`;
-            }
+        let pairHtml = '<span style="color:var(--text-muted);">--</span>';
+        if (nState.last_peer_id) {
+            const peerClean = String(nState.last_peer_id).replace(/^0x/i, '').padStart(4, '0');
+            pairHtml = `<span class="mono-cell">0x${nodeId} ↔ 0x${escapeHtml(peerClean)}</span>`;
+        } else if (activeMaster && !isSelfMaster && nState.last_dist_m !== null && nState.last_dist_m !== undefined) {
+            pairHtml = `<span class="mono-cell">0x${activeMaster} ↔ 0x${nodeId}</span>`;
+        }
 
-            if (nState.t_global_s && nState.is_online) {
-                tgHtml = `<span class="mono-cell">${Number(nState.t_global_s).toFixed(6)} s</span>`;
-            } else {
-                tgHtml = `<span style="color:var(--text-muted); font-size:11px;">Sem TG válido</span>`;
-            }
-
-            if (nState.is_online) {
-                const rawPairs = Number(nState.calib_pairs);
-                if (Number.isFinite(rawPairs) && rawPairs >= 0) {
-                    syncHtml = `<span class="badge badge-emerald">Sincronizado (${rawPairs} pares)</span>`;
-                } else {
-                    syncHtml = `<span class="badge badge-gray">Sincronização Desconhecida</span>`;
-                }
-            } else {
-                syncHtml = `<span class="badge badge-gray">Sincronização Inválida</span>`;
-            }
-
-            if (measDist !== null && measDist !== undefined && nState.is_online) {
-                validHtml = `<span class="badge badge-emerald">Válida</span>`;
-            } else if (!nState.is_online) {
-                validHtml = `<span class="badge badge-gray">Nó Desconectado</span>`;
-            } else {
-                validHtml = `<span class="badge badge-rose">Medição Rejeitada</span>`;
+        let distHtml = '<span style="color:var(--text-muted);">--</span>';
+        if (nState.last_dist_m !== null && nState.last_dist_m !== undefined) {
+            const distNum = Number(nState.last_dist_m);
+            if (Number.isFinite(distNum)) {
+                distHtml = `<strong class="mono-cell">${distNum.toFixed(4)} m</strong>`;
             }
         }
 
+        let tofHtml = '<span style="color:var(--text-muted);">--</span>';
+        if (nState.last_tdoa !== null && nState.last_tdoa !== undefined) {
+            const v = Number(nState.last_tdoa);
+            if (Number.isFinite(v)) {
+                tofHtml = `<span class="mono-cell">${Math.abs(v) < 1000 ? (v >= 0 ? '+' : '') + v.toFixed(3) + ' ns' : v.toFixed(0) + ' ticks'}</span>`;
+            }
+        } else if (nState.last_dist_m !== null && nState.last_dist_m !== undefined) {
+            const tofNs = Number(nState.last_dist_m) / 0.299702547;
+            if (Number.isFinite(tofNs)) {
+                tofHtml = `<span class="mono-cell">+${tofNs.toFixed(3)} ns</span>`;
+            }
+        }
+
+        let cfoHtml = '<span style="color:var(--text-muted);">--</span>';
+        if (nState.clock_drift_ppm !== null && nState.clock_drift_ppm !== undefined) {
+            const cfo = Number(nState.clock_drift_ppm);
+            if (Number.isFinite(cfo)) {
+                cfoHtml = `<span class="mono-cell">${cfo >= 0 ? '+' : ''}${cfo.toFixed(3)} ppm</span>`;
+            }
+        }
+
+        let tgHtml = '<span style="color:var(--text-muted);">--</span>';
+        if (nState.t_global_s !== null && nState.t_global_s !== undefined) {
+            const tgS = Number(nState.t_global_s);
+            if (Number.isFinite(tgS)) {
+                tgHtml = `<span class="mono-cell">${tgS.toFixed(6)} s</span>`;
+            }
+        } else if (nState.t_global_us !== null && nState.t_global_us !== undefined) {
+            const tgUs = Number(nState.t_global_us);
+            if (Number.isFinite(tgUs)) {
+                tgHtml = `<span class="mono-cell">${(tgUs / 1e6).toFixed(6)} s</span>`;
+            }
+        }
+
+        const commLabel = nState.comm_state_label || (isOnline ? 'Receção ativa' : 'Sem dados na sessão');
+        const dtPart = (nState.dt_sec !== null && nState.dt_sec !== undefined) ? `Δt=${nState.dt_sec}s` : '';
+        const statusHtml = isOnline
+            ? `<span class="badge badge-emerald">${dtPart ? dtPart + ' · ' : ''}${escapeHtml(commLabel)}</span>`
+            : `<span class="badge badge-gray">${dtPart ? dtPart + ' · ' : ''}${escapeHtml(commLabel)}</span>`;
+
         html += `<tr>
-            <td style="text-align:center;"><strong style="color:var(--amber);">0x${activeMaster}</strong></td>
-            <td style="text-align:center;"><strong style="color:var(--cyan);">0x${nodeId}</strong></td>
+            <td style="text-align:center;"><strong style="color:${isSelfMaster ? 'var(--amber)' : 'var(--cyan)'};">0x${nodeId}</strong></td>
+            <td style="text-align:center;">${roleHtml}</td>
+            <td style="text-align:center;">${pairHtml}</td>
             <td style="text-align:right;">${distHtml}</td>
+            <td style="text-align:right;">${tofHtml}</td>
+            <td style="text-align:right;">${cfoHtml}</td>
             <td style="text-align:right;">${tgHtml}</td>
-            <td style="text-align:center;">${syncHtml}</td>
-            <td style="text-align:center;">${validHtml}</td>
+            <td style="text-align:center;">${statusHtml}</td>
         </tr>`;
     });
 

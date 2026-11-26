@@ -1052,24 +1052,28 @@
                             
                             <!-- Chips dos 6 Módulos com Sub-Pills TDoA / TWR -->
                             ${[
-                                { id: '0001', name: 'N01', col: '#0284c7' },
-                                { id: '0002', name: 'N02', col: '#2563eb' },
-                                { id: '0003', name: 'N03', col: '#ffd600' },
-                                { id: '0004', name: 'N04', col: '#8b5cf6' },
-                                { id: '0005', name: 'N05', col: '#14b8a6' },
-                                { id: '0006', name: 'N06', col: '#fb7185' }
-                            ].map(m => `
+                                { id: '0001', name: 'Nó 1', col: '#0284c7' },
+                                { id: '0002', name: 'Nó 2', col: '#2563eb' },
+                                { id: '0003', name: 'Nó 3', col: '#ffd600' },
+                                { id: '0004', name: 'Nó 4', col: '#8b5cf6' },
+                                { id: '0005', name: 'Nó 5', col: '#14b8a6' },
+                                { id: '0006', name: 'Nó 6', col: '#fb7185' }
+                            ].map(m => {
+                                const isActiveMaster = Boolean(window.LiveState?.masterConfirmed && window.LiveState?.currentMasterId === m.id);
+                                const chipLabel = isActiveMaster ? `👑 ${m.name}` : m.name;
+                                return `
                                 <div class="uwb-filter-chip" style="--chip-accent:${m.col}; display:inline-flex; align-items:center; gap:4px; padding:2px 5px; border-radius:5px; border:1px solid ${m.col}50; background:rgba(15,23,42,0.8);">
                                     <label style="display:inline-flex; align-items:center; gap:3px; cursor:pointer; margin:0;" title="Ver todos os dados do módulo 0x${m.id}">
                                         <input type="checkbox" class="${uid}-cb-mod uwb-custom-checkbox" value="${m.id}" style="--cb-color:${m.col}; cursor:pointer;">
-                                        <span class="uwb-node-badge" style="background:${m.col}25; color:${m.col}; font-weight:700; font-size:10px;">${m.name}</span>
+                                        <span class="uwb-node-badge" style="background:${m.col}25; color:${m.col}; font-weight:700; font-size:10px;">${chipLabel}</span>
                                     </label>
                                     <div style="display:inline-flex; align-items:center; gap:2px; margin-left:2px; border-left:1px solid rgba(255,255,255,0.1); padding-left:3px;">
                                         <button type="button" class="btn-node-proto-sub" data-node="${m.id}" data-proto="tdoa" title="Ver apenas TDoA de 0x${m.id}" style="border:1px solid rgba(0,229,255,0.3); background:rgba(0,229,255,0.08); color:#00e5ff; font-size:8.5px; font-weight:800; padding:1px 3px; border-radius:3px; cursor:pointer;">TDoA</button>
                                         <button type="button" class="btn-node-proto-sub" data-node="${m.id}" data-proto="twr" title="Ver apenas TWR de 0x${m.id}" style="border:1px solid rgba(168,85,247,0.3); background:rgba(168,85,247,0.08); color:#c084fc; font-size:8.5px; font-weight:800; padding:1px 3px; border-radius:3px; cursor:pointer;">TWR</button>
                                     </div>
                                 </div>
-                            `).join('')}
+                            `;
+                            }).join('')}
 
                             <button type="button" class="uwb-quick-pill" id="${uid}-btn-mod-all" title="Selecionar todos os módulos" style="cursor:pointer;">Todos</button>
                             <button type="button" class="uwb-quick-pill" id="${uid}-btn-mod-none" title="Limpar filtro de módulos" style="cursor:pointer;">Limpar</button>
@@ -1085,14 +1089,14 @@
                         </div>
                     </div>
 
-                    <!-- Linha 2: Pares com Hub Coordenador, Dropdown de Pares Específicos e Âmbito de Rede -->
+                    <!-- Linha 2: Pares com Master Ativo, Dropdown de Pares Específicos e Âmbito de Rede -->
                     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-top:6px;">
                         <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
-                            <span style="font-size:10px; font-weight:800; color:var(--purple); text-transform:uppercase; letter-spacing:0.4px;">🔗 Pares com Hub:</span>
+                            <span style="font-size:10px; font-weight:800; color:var(--purple); text-transform:uppercase; letter-spacing:0.4px;">👑 Pares com Master:</span>
                             ${['0001', '0002', '0003', '0004', '0005', '0006'].map(nid => `
-                                <label class="uwb-filter-chip" style="cursor:pointer; display:inline-flex; align-items:center; gap:3px; padding:2px 5px; border-radius:4px; background:rgba(15,23,42,0.8); border:1px solid rgba(168,85,247,0.3);" title="Par Hub Coordenador ↔ Nó 0x${nid}">
+                                <label class="uwb-filter-chip" style="cursor:pointer; display:inline-flex; align-items:center; gap:3px; padding:2px 5px; border-radius:4px; background:rgba(15,23,42,0.8); border:1px solid rgba(168,85,247,0.3);" title="Par Master Ativo ↔ Nó 0x${nid}">
                                     <input type="checkbox" class="${uid}-cb-hub-pair uwb-custom-checkbox" value="hub-${nid}" style="--cb-color:#a855f7; cursor:pointer;">
-                                    <span style="font-family:var(--font-mono); font-size:9.5px; font-weight:700; color:#cbd5e1;">Hub↔N${parseInt(nid, 16)}</span>
+                                    <span style="font-family:var(--font-mono); font-size:9.5px; font-weight:700; color:#cbd5e1;">M↔N${parseInt(nid, 16)}</span>
                                 </label>
                             `).join('')}
                             <button type="button" class="uwb-quick-pill" id="${uid}-btn-hub-pair-all" style="cursor:pointer;">Todos</button>
@@ -1124,8 +1128,8 @@
                             <div style="width:1px; height:16px; background:rgba(255,255,255,0.1); margin:0 3px;"></div>
 
                             <span style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px;">Âmbito:</span>
-                            <button type="button" class="uwb-quick-pill ${this.filters.scope === 'all' ? 'active' : ''}" id="${uid}-btn-scope-all" style="cursor:pointer;" title="Toda a Swarm (Hub + Mesh)">🌐 Toda Swarm</button>
-                            <button type="button" class="uwb-quick-pill ${this.filters.scope === 'primary' ? 'active' : ''}" id="${uid}-btn-scope-primary" style="cursor:pointer;" title="Apenas transmissões entre o Hub e os nós remotos">⭐ Só Hub</button>
+                            <button type="button" class="uwb-quick-pill ${this.filters.scope === 'all' ? 'active' : ''}" id="${uid}-btn-scope-all" style="cursor:pointer;" title="Toda a Swarm (Master + Mesh)">🌐 Toda Swarm</button>
+                            <button type="button" class="uwb-quick-pill ${this.filters.scope === 'primary' ? 'active' : ''}" id="${uid}-btn-scope-primary" style="cursor:pointer;" title="Apenas transmissões entre o Master ativo e os nós remotos">⭐ Só Master</button>
                             <button type="button" class="uwb-quick-pill ${this.filters.scope === 'mesh' ? 'active' : ''}" id="${uid}-btn-scope-mesh" style="cursor:pointer;" title="Apenas tráfego secundário entre nós escravos">🔬 Só Mesh</button>
                         </div>
                     </div>

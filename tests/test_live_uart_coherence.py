@@ -125,7 +125,7 @@ class TestLiveUartCoherence(unittest.TestCase):
         """Testa o controlo e a coerência do estado de rotação de Master."""
         st = self.engine.get_status()
         self.assertIn("master_rotation", st)
-        self.assertEqual(st["master_rotation"]["current_master_id"], "0001")
+        self.assertIsNone(st["master_rotation"]["current_master_id"])
         self.assertIsNone(st["master_rotation"]["next_master_id"])
 
         # Simulação: alternar modo

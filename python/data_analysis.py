@@ -1775,27 +1775,28 @@ class LiveTelemetryEngine:
         }
 
         # Estado dinâmico de coordenação e rotação de Master (SwarmLoc E8.40)
+        # Fidelidade 1:1 com hardware: não assume Master nem Sucessor até receber pacote UART
         self.master_rotation = {
-            "current_master_id": "0001",
+            "current_master_id": None,
             "prev_master_id": None,
             "next_master_id": None,
-            "master_confirmed": True,
-            "last_change_epoch": int(time.time() * 1000),
-            "last_change_reason": "Inicialização do Protocolo Hardware",
+            "master_confirmed": False,
+            "last_change_epoch": 0,
+            "last_change_reason": "A aguardar telemetria UART",
             "active_master_source": "TELEMETRIA_UART"
         }
 
-        # Pré-inicializar nós padrão do enxame SwarmLoc
+        # Pré-inicializar nós simétricos do enxame SwarmLoc (sem papel fixo pré-assumido)
         self._init_default_swarm_nodes()
 
     def _init_default_swarm_nodes(self):
         defaults = [
-            ("0001", "Master"),
-            ("0002", "Slave"),
-            ("0003", "Slave"),
-            ("0004", "Slave"),
-            ("0005", "Slave"),
-            ("0006", "Slave")
+            ("0001", None),
+            ("0002", None),
+            ("0003", None),
+            ("0004", None),
+            ("0005", None),
+            ("0006", None)
         ]
         for nid, role in defaults:
             self.node_states[nid] = {
@@ -1985,7 +1986,7 @@ class LiveTelemetryEngine:
 
     def step_simulation_rotation(self):
         with self.lock:
-            curr = self.master_rotation.get("current_master_id", "0001")
+            curr = self.master_rotation.get("current_master_id") or "0001"
             prev = curr
             order = ["0001", "0002", "0003", "0004", "0005", "0006"]
             try:
@@ -2190,14 +2191,14 @@ class LiveTelemetryEngine:
                     time.sleep(0.5)
 
     def _is_master_port(self, port):
-        curr_master = self.master_rotation.get("current_master_id", "0001")
+        curr_master = self.master_rotation.get("current_master_id")
         nid = MODULE_IDENTITY_CACHE.get(port, {}).get("node_id")
-        if nid:
+        if nid and curr_master:
             return nid == curr_master
         role = MODULE_IDENTITY_CACHE.get(port, {}).get("role")
         if role:
             return role == "Master"
-        return port == "COM6"
+        return False
 
     def _process_binary_tdoa_frame(self, port, frame):
         # Registar que a porta possui fluxo binário 7B ativo (550 Hz)
@@ -3291,7 +3292,7 @@ class LiveTelemetryEngine:
             except Exception:
                 pass
         if node_id not in self.node_states:
-            role = kwargs.get("role") or ("Master" if node_id in ["0000", "0", "0001", "1"] else "Slave")
+            role = kwargs.get("role")
             self.node_states[node_id] = {
                 "node_id": node_id,
                 "role": role,
@@ -3329,6 +3330,9 @@ class LiveTelemetryEngine:
             curr_m = self.master_rotation.get('current_master_id')
             if curr_m is None:
                 self.master_rotation['current_master_id'] = node_id
+                self.master_rotation['master_confirmed'] = True
+                self.master_rotation['last_change_epoch'] = int(now * 1000)
+                self.master_rotation['last_change_reason'] = 'Identificação UART de Hardware'
         elif kwargs.get('role') == 'Slave':
             st['role'] = 'Slave'
         mode = kwargs.get("mode") or st.get("mode", "")

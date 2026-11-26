@@ -136,12 +136,12 @@
                         <span class="filter-label">Nó:</span>
                         <select id="catalog-node-filter" class="input-select" onchange="renderCatalog()">
                             <option value="all">Todos os Nós</option>
-                            <option value="0001">0x0001 (Master)</option>
-                            <option value="0002">0x0002 (Slave)</option>
-                            <option value="0003">0x0003 (Slave)</option>
-                            <option value="0004">0x0004 (Slave)</option>
-                            <option value="0005">0x0005 (Slave)</option>
-                            <option value="0006">0x0006 (Slave)</option>
+                            <option value="0001">Nó 1 (0x0001)</option>
+                            <option value="0002">Nó 2 (0x0002)</option>
+                            <option value="0003">Nó 3 (0x0003)</option>
+                            <option value="0004">Nó 4 (0x0004)</option>
+                            <option value="0005">Nó 5 (0x0005)</option>
+                            <option value="0006">Nó 6 (0x0006)</option>
                         </select>
                     </div>
 
@@ -489,53 +489,7 @@
                 </div>
             </div>
 
-            <!-- Aba C: Estatística e Distribuições -->
-            <div id="tab-pane-stats" class="tab-pane">
-                <div class="filter-toolbar" style="margin-bottom:14px; flex-wrap:wrap; gap:12px;">
-                    <div class="filter-group">
-                        <span class="filter-label">Analisar por Link / Módulo:</span>
-                        <select id="stats-link-select" class="input-select" onchange="renderTabStats()">
-                            <!-- Preenchido dinamicamente via app.js -->
-                        </select>
-                    </div>
-
-                    <!-- Seletor de Ferramenta / Modo de Distribuição -->
-                    <div class="filter-group" id="stats-tool-group" style="margin-left:auto;">
-                        <span class="filter-label">Ferramenta de Distribuição:</span>
-                        <div class="btn-group" id="stats-tool-selector">
-                            <button class="btn btn-outline btn-sm active" id="btn-tool-all" onclick="switchStatsTool('all')">
-                                Grelha Completa (Multi-Painel)
-                            </button>
-                            <button class="btn btn-outline btn-sm" id="btn-tool-hist" onclick="switchStatsTool('hist')">
-                                Histograma & Densidades (KDE)
-                            </button>
-                            <button class="btn btn-outline btn-sm" id="btn-tool-ecdf" onclick="switchStatsTool('ecdf')">
-                                ECDF vs Normal Teórica (Fn vs Φ)
-                            </button>
-                            <button class="btn btn-outline btn-sm" id="btn-tool-qq" onclick="switchStatsTool('qq')">
-                                Diagnóstico Q-Q Plot
-                            </button>
-                            <button class="btn btn-outline btn-sm" id="btn-tool-box" onclick="switchStatsTool('box')">
-                                Box Plot & Quartis (Jitter Strip)
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section-card" id="stats-table-card">
-                    <div class="section-card-header" style="cursor: pointer; user-select: none;" onclick="toggleStatsTableCollapse(event)">
-                        <div class="section-card-title" id="stats-table-title" style="margin-bottom: 0;">Tabela Paramétrica de Distribuição e Dispersão Metrológica</div>
-                        <button type="button" class="btn btn-outline btn-sm" id="btn-toggle-stats-table" style="font-size: 12px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" onclick="toggleStatsTableCollapse(event)">
-                            <span id="stats-toggle-icon">▲</span>
-                            <span id="stats-toggle-text">Encolher</span>
-                        </button>
-                    </div>
-                    <div class="table-responsive" id="stats-table-container">
-                        <!-- Tabela preenchida dinamicamente para 1 link ou comparação lado a lado -->
-                    </div>
-                </div>
-
-                <!-- Aba E: Dados Crus (54B) -->
+            <!-- Aba F2: Registos Originais (54B) -->
             <div id="tab-pane-raw-data" class="tab-pane">
                 <div class="data-table-container">
                     <div class="table-toolbar">
@@ -547,9 +501,12 @@
                             <span class="filter-label">Nó:</span>
                             <select class="input-select" onchange="onRawNodeFilterChange(this.value)">
                                 <option value="all">Todos</option>
-                                <option value="0x0001">0x0001</option>
-                                <option value="0x0002">0x0002</option>
-                                <option value="0x0003">0x0003</option>
+                                <option value="0x0001">Nó 1 (0x0001)</option>
+                                <option value="0x0002">Nó 2 (0x0002)</option>
+                                <option value="0x0003">Nó 3 (0x0003)</option>
+                                <option value="0x0004">Nó 4 (0x0004)</option>
+                                <option value="0x0005">Nó 5 (0x0005)</option>
+                                <option value="0x0006">Nó 6 (0x0006)</option>
                             </select>
 
                             <span class="filter-label">Status:</span>
@@ -599,49 +556,7 @@
                 </div>
             </div>
 
-            <!-- Aba F: Notas e Metadados -->
-            <div id="tab-pane-notes" class="tab-pane">
-                <div class="section-card" style="max-width: 800px;">
-                    <div class="section-card-header">
-                        <div class="section-card-title">Metadados Experimentais e Ground-Truth do Ensaio</div>
-                    </div>
 
-                    <div style="display:flex; flex-direction:column; gap:14px;">
-                        <div>
-                            <label class="filter-label" style="display:block; margin-bottom:4px;">Título / Designação do Ensaio:</label>
-                            <input type="text" id="note-trial-title" class="input-text" style="width:100%;" placeholder="Ex: Ensaio Estático a 2.0 metros (Antenas em Visada Direta - LOS)">
-                        </div>
-
-                        <div>
-                            <label class="filter-label" style="display:block; margin-bottom:4px;">Campanha / Estudo Experimental:</label>
-                            <input type="text" id="note-trial-campaign" class="input-text" style="width:100%;" placeholder="Ex: Campanha Estática Laboratório 2026">
-                        </div>
-
-                        <div>
-                            <label class="filter-label" style="display:block; margin-bottom:4px;">Distâncias Nominais de Referência por Nó / Link (Ground-Truth em Metros):</label>
-                            <div id="notes-ref-distances-container" style="display:flex; flex-direction:column; gap:8px; margin-bottom:6px;">
-                                <!-- Gerado dinamicamente para cada nó/link presente no ensaio -->
-                            </div>
-                            <input type="number" step="0.001" id="note-trial-ref-dist" class="input-text" style="width:100%; display:none;" placeholder="Ex: 2.000">
-                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
-                                Configure a distância real conhecida para cada nó/módulo. As séries temporais e estatísticas metrológicas calcularão os desvios exatos em relação a cada referência independente.
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="filter-label" style="display:block; margin-bottom:4px;">Observações Experimentais e Condições Ambientais:</label>
-                            <textarea id="note-trial-comments" class="input-textarea" rows="4" placeholder="Registe detalhes sobre altura dos mastros, reflexões metálicas, alimentação por bateria, etc."></textarea>
-                        </div>
-
-                        <div>
-                            <button class="btn btn-primary" onclick="saveTrialNotes()">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                                Guardar Metadados no Servidor
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
         </section>
 
@@ -718,9 +633,9 @@
             <div id="live-master-rotation-bar" class="swarm-rotation-bar-slim">
                 <div style="display:flex; align-items:center; gap:8px; overflow:hidden; white-space:nowrap;">
                     <!-- Master Atual -->
-                    <span id="live-master-crown-badge" style="display:inline-flex; align-items:center; gap:4px; font-weight:800; font-family:var(--font-mono); font-size:11px; color:#facc15;">
-                        <span id="live-master-crown-icon" style="font-size:12px;">👑</span>
-                        <span id="live-master-crown-text">MASTER: <strong style="color:#ffffff;">0x0001</strong></span>
+                    <span id="live-master-crown-badge" style="display:inline-flex; align-items:center; gap:4px; font-weight:800; font-family:var(--font-mono); font-size:11px; color:#94a3b8;">
+                        <span id="live-master-crown-icon" style="font-size:12px;">📡</span>
+                        <span id="live-master-crown-text">MASTER: <strong style="color:#ffffff;">--</strong></span>
                     </span>
 
                     <span style="color:rgba(255,255,255,0.2); font-size:10px;">•</span>
@@ -733,19 +648,19 @@
                     <span style="color:rgba(255,255,255,0.2); font-size:10px;">•</span>
 
                     <span style="font-size:10.5px; font-family:var(--font-mono); color:#94a3b8;">
-                        Sucessor: <strong id="live-master-next-val" style="color:#38bdf8;">0x0002</strong>
+                        Sucessor: <strong id="live-master-next-val" style="color:#38bdf8;">--</strong>
                     </span>
 
                     <span style="color:rgba(255,255,255,0.2); font-size:10px;">•</span>
 
                     <span style="font-size:10.5px; font-family:var(--font-mono); color:#94a3b8;" id="live-master-elapsed-text">
-                        Transição: <strong id="live-master-last-time" style="color:#34d399;">Em regime</strong>
+                        Transição: <strong id="live-master-last-time" style="color:#94a3b8;">--</strong>
                     </span>
 
                     <span style="color:rgba(255,255,255,0.2); font-size:10px;">•</span>
 
                     <span id="live-master-reason-badge" style="font-size:10.5px; font-family:var(--font-mono); color:#94a3b8;" title="Justificação do protocolo">
-                        Motivo: <span id="live-master-reason-text" style="color:#38bdf8; font-weight:600;">Inicialização Hardware</span>
+                        Estado: <span id="live-master-reason-text" style="color:#94a3b8; font-weight:600;">A aguardar telemetria UART</span>
                     </span>
                 </div>
 
@@ -780,7 +695,7 @@
                             Comandos UART:
                         </span>
                         <select id="live-cmd-target" class="input-select" style="min-width: 140px; font-size: 11px; padding: 4px 8px; height: 28px;">
-                            <option value="master" selected>Master (0x0001)</option>
+                            <option value="master" selected>Master Ativo</option>
                             <option value="all">Todos os Módulos</option>
                         </select>
                         <input type="text" id="live-cmd-input" class="input-text" placeholder="t 35, k 0, k 0.5s, s, r, l, p..." style="flex:1; font-family:var(--font-mono); font-size:12px; padding: 4px 10px; height: 28px;" onkeydown="if(event.key==='Enter') executeLiveCustomCommand()">
@@ -927,8 +842,8 @@
             <div class="card" id="live-swarm-dynamic-table-card" style="margin-bottom: 16px; border: 1px solid rgba(168, 85, 247, 0.4);">
                 <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div style="font-weight:700; font-size:13px; color:var(--text-main); display:flex; align-items:center; gap:8px;">
-                        <span>👑 Tabela Dinâmica de Rotação do Master e Distâncias Relativas (E8.45)</span>
-                        <span id="live-swarm-slot-badge" class="badge badge-purple" style="font-family:var(--font-mono); font-size:11px;">Slot: -- | Ciclo 60s</span>
+                        <span>👑 Tabela Dinâmica do Enxame — Telemetria 1:1 por Nó (UART Real)</span>
+                        <span id="live-swarm-slot-badge" class="badge badge-purple" style="font-family:var(--font-mono); font-size:11px;">Nós Ativos: 0 / 6</span>
                     </div>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <span id="live-swarm-master-badge" class="badge badge-amber" style="font-family:var(--font-mono); font-size:11px;">Master Atual: --</span>
@@ -938,17 +853,19 @@
                     <table class="scientific-table" id="table-swarm-dynamic">
                         <thead>
                             <tr>
-                                <th style="text-align:center;">ID Master</th>
-                                <th style="text-align:center;">ID Módulo</th>
-                                <th style="text-align:right;">Dist</th>
-                                <th style="text-align:right;">TG</th>
-                                <th style="text-align:center;">Sincronização</th>
-                                <th style="text-align:center;">Validade</th>
+                                <th style="text-align:center;">Nó</th>
+                                <th style="text-align:center;">Papel UART</th>
+                                <th style="text-align:center;">Último Par RF</th>
+                                <th style="text-align:right;">Distância 1D (m)</th>
+                                <th style="text-align:right;">ToF (ns)</th>
+                                <th style="text-align:right;">CFO (ppm)</th>
+                                <th style="text-align:right;">TG (s)</th>
+                                <th style="text-align:center;">Idade / Estado UART</th>
                             </tr>
                         </thead>
                         <tbody id="live-swarm-dynamic-table-body">
                             <tr>
-                                <td colspan="6" style="text-align:center; color:var(--text-muted); padding:14px;">
+                                <td colspan="8" style="text-align:center; color:var(--text-muted); padding:14px;">
                                     A aguardar início da telemetria do enxame...
                                 </td>
                             </tr>
@@ -1067,13 +984,14 @@
                             <span class="filter-label">Nó / Origem:</span>
                             <select id="live-console-node-filter" class="input-select" style="font-size:11px; padding:2px 6px;" onchange="filterLiveConsole()">
                                 <option value="all" selected>Todos os Nós</option>
-                                <option value="slaves">📡 Apenas Slaves (Receptores TDoA)</option>
-                                <option value="master">👑 Master 0x0001 (Emissor / Sync)</option>
-                                <option value="0002">Slave 0x0002</option>
-                                <option value="0003">Slave 0x0003</option>
-                                <option value="0004">Slave 0x0004</option>
-                                <option value="0005">Slave 0x0005</option>
-                                <option value="0006">Slave 0x0006</option>
+                                <option value="master">👑 Apenas Master Atual</option>
+                                <option value="slaves">📡 Apenas Slaves Atuais</option>
+                                <option value="0001">Nó 1 (0x0001)</option>
+                                <option value="0002">Nó 2 (0x0002)</option>
+                                <option value="0003">Nó 3 (0x0003)</option>
+                                <option value="0004">Nó 4 (0x0004)</option>
+                                <option value="0005">Nó 5 (0x0005)</option>
+                                <option value="0006">Nó 6 (0x0006)</option>
                             </select>
                         </div>
                         <div class="filter-group">
@@ -1102,17 +1020,18 @@
                         <button class="btn btn-secondary btn-sm" onclick="copyLiveConsoleLogs()" style="padding:2px 8px; font-size:11px;">Copiar Logs</button>
                     </div>
                 </div>
-                <!-- Faixa de Botões Rápidos para Isolar Slaves TDoA vs Master -->
+                <!-- Faixa de Botões Rápidos para Isolar Nós Simétricos do Enxame -->
                 <div id="console-quick-nodes-strip" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; padding:8px 14px; background:rgba(15,23,42,0.6); border-bottom:1px solid var(--border-default); font-size:11px;">
                     <span style="font-weight:700; color:var(--cyan); text-transform:uppercase; font-size:10.5px; margin-right:4px;">Filtrar Stream:</span>
                     <button class="btn btn-primary btn-xs" id="pill-node-all" onclick="setConsoleNodeFilter('all')">Todos (Enxame)</button>
-                    <button class="btn btn-outline btn-xs" id="pill-node-slaves" onclick="setConsoleNodeFilter('slaves')" style="color:var(--emerald); border-color:rgba(16,185,129,0.4);">📡 Apenas Slaves (TDoA RX)</button>
-                    <button class="btn btn-outline btn-xs" id="pill-node-master" onclick="setConsoleNodeFilter('master')" style="color:var(--cyan); border-color:rgba(56,189,248,0.4);">👑 Master 0x0001</button>
-                    <button class="btn btn-outline btn-xs" id="pill-node-0002" onclick="setConsoleNodeFilter('0002')">Slave 0x0002</button>
-                    <button class="btn btn-outline btn-xs" id="pill-node-0003" onclick="setConsoleNodeFilter('0003')">Slave 0x0003</button>
-                    <button class="btn btn-outline btn-xs" id="pill-node-0004" onclick="setConsoleNodeFilter('0004')">Slave 0x0004</button>
-                    <button class="btn btn-outline btn-xs" id="pill-node-0005" onclick="setConsoleNodeFilter('0005')">Slave 0x0005</button>
-                    <button class="btn btn-outline btn-xs" id="pill-node-0006" onclick="setConsoleNodeFilter('0006')">Slave 0x0006</button>
+                    <button class="btn btn-outline btn-xs" id="pill-node-master" onclick="setConsoleNodeFilter('master')" style="color:var(--amber); border-color:rgba(250,204,21,0.4);">👑 Master Atual</button>
+                    <button class="btn btn-outline btn-xs" id="pill-node-slaves" onclick="setConsoleNodeFilter('slaves')" style="color:var(--emerald); border-color:rgba(16,185,129,0.4);">📡 Slaves Atuais</button>
+                    <button class="btn btn-outline btn-xs" id="pill-node-0001" onclick="setConsoleNodeFilter('0001')">Nó 1 (0x0001)</button>
+                    <button class="btn btn-outline btn-xs" id="pill-node-0002" onclick="setConsoleNodeFilter('0002')">Nó 2 (0x0002)</button>
+                    <button class="btn btn-outline btn-xs" id="pill-node-0003" onclick="setConsoleNodeFilter('0003')">Nó 3 (0x0003)</button>
+                    <button class="btn btn-outline btn-xs" id="pill-node-0004" onclick="setConsoleNodeFilter('0004')">Nó 4 (0x0004)</button>
+                    <button class="btn btn-outline btn-xs" id="pill-node-0005" onclick="setConsoleNodeFilter('0005')">Nó 5 (0x0005)</button>
+                    <button class="btn btn-outline btn-xs" id="pill-node-0006" onclick="setConsoleNodeFilter('0006')">Nó 6 (0x0006)</button>
                 </div>
                 <div class="card-body" style="padding:0;">
                     <div id="live-console" class="live-terminal-window">
