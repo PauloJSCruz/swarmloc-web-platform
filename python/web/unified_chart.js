@@ -1448,9 +1448,18 @@
                 }
             }
 
-            // 2. Garantir sempre os pares canónicos primários (0001 <-> 0002, 0001 <-> 0003, 0001 <-> 0004)
-            // mais quaisquer outros escravos ativos no enxame
-            ['0002', '0003', '0004'].forEach(slaveId => {
+            // 2. Garantir sempre os pares canónicos primários da topologia de 6 nós (0001 <-> 0002..0006)
+            // mais quaisquer outros nós conhecidos em window.LiveState?.nodes
+            const knownNodes = new Set(['0001', '0002', '0003', '0004', '0005', '0006']);
+            if (window.LiveState && window.LiveState.nodes && typeof window.LiveState.nodes === 'object') {
+                Object.keys(window.LiveState.nodes).forEach(nid => {
+                    const clean = normalizeId(nid);
+                    if (clean && clean !== '0000' && !clean.includes('*')) {
+                        knownNodes.add(clean);
+                    }
+                });
+            }
+            knownNodes.forEach(slaveId => {
                 if (slaveId !== master) {
                     pairsSet.add([master, slaveId].sort().join('-'));
                 }
